@@ -1,0 +1,3 @@
+package chip8i
+
+modules = Main
