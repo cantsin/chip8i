@@ -2,6 +2,7 @@ module Main
 
 import Data.Vect
 import Data.Buffer
+import Data.Bits
 import System
 
 RamSize : Int
@@ -29,6 +30,17 @@ record Chip8 where
   -- sound timer register ST
   ST : Bits8
 
+-- not sure why these casts are not included already. goes without
+-- saying that some conversions are potentially lossy.
+Cast Int Bits16 where
+  cast = prim__zextInt_B16
+
+Cast Bits16 Int where
+  cast = prim__zextB16_Int
+
+Cast Bits8 Bits16 where
+  cast = prim__zextB8_B16
+
 newChip : IO Chip8
 newChip =
   do
@@ -37,11 +49,21 @@ newChip =
       Just ram =>
         let v = Vect.replicate 16 0 in
         let stack = Vect.replicate 16 0 in
-        pure $ MkChip8 v 0 0 stack 0 ram 0 0
+        let pc : Bits16 = cast StartingAddress in
+        pure $ MkChip8 v 0 pc stack 0 ram 0 0
       Nothing =>
         do
           putStrLn "Not enough memory"
           System.exitFailure
+
+getOpcode : (chip : Chip8) -> IO Bits16
+getOpcode c =
+  let pc : Int = cast $ PC c in
+  let ram = Ram c in
+  do
+    b1 <- Buffer.getByte ram pc
+    b2 <- Buffer.getByte ram (pc + 1)
+    pure $ (cast b1) * 0x100 + (cast b2)
 
 getRegister : (chip : Chip8) -> (index : Fin 16) -> Bits8
 getRegister c i =
@@ -76,11 +98,21 @@ readROMFromFile filename =
           putStrLn "Could not read ROM"
           System.exitFailure
 
+runROM : (chip : Chip8) -> (address : Int) -> IO ()
+runROM c address =
+  do
+    op <- getOpcode c
+    putStrLn (show $ the Bits16 op)
+  -- increment PC
+  -- dispatch
+  -- loop?
+
 main : IO ()
 main = do
   chip <- newChip
   rom <- readROMFromFile "./roms/maze.rom"
   loadROMAt chip rom StartingAddress
+  runROM chip StartingAddress
   putStrLn "Fin."
 
 -- TODO
