@@ -5,7 +5,10 @@ import Data.Buffer
 import System
 
 RamSize : Int
-RamSize = 4096
+RamSize = 0x1000
+
+StartingAddress : Int
+StartingAddress = 0x200
 
 record Chip8 where
   constructor MkChip8
@@ -51,11 +54,11 @@ setRegister c i v =
 
 loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
 loadROMAt c rom address =
-  Buffer.copyData rom 0 (Buffer.size rom) (Ram c) 0x200
+  Buffer.copyData rom 0 (Buffer.size rom) (Ram c) address
 
 readROMFromFile : (filename : String) -> IO Buffer
 readROMFromFile filename =
-  let maxLength : Int = 0x1000 - 0x200 in
+  let maxLength : Int = RamSize - StartingAddress in
   do
     handle <- openFile filename Read
     case handle of
@@ -77,7 +80,7 @@ main : IO ()
 main = do
   chip <- newChip
   rom <- readROMFromFile "./roms/maze.rom"
-  loadROMAt chip rom 0x200
+  loadROMAt chip rom StartingAddress
   putStrLn "Fin."
 
 -- TODO
