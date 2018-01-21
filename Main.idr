@@ -2,6 +2,7 @@ module Main
 
 import Data.Vect
 import Data.Buffer
+import System
 
 record Chip8 where
   constructor MkChip8
@@ -15,9 +16,8 @@ record Chip8 where
   SP : Bits8
   -- stack is an array of 16 16-bit values
   Stack : Vect 16 Bits16
-  -- 4kb RAM
-  -- 0x000 to 0x1ff are reserved, start instruction at 0x200
-  Ram : IO (Maybe Buffer)
+  -- 4kb RAM: 0x000 to 0x1ff are reserved, start instruction at 0x200
+  Ram : Buffer
   -- delay time register DT
   DT : Bits8
   -- sound timer register ST
@@ -27,12 +27,19 @@ record Chip8 where
 main : IO ()
 main = putStrLn "Hello world"
 
-newChip : Chip8
+newChip : IO Chip8
 newChip =
-  let v = Vect.replicate 16 0 in
-  let stack = Vect.replicate 16 0 in
-  let ram = Buffer.newBuffer 4096 in
-  MkChip8 v 0 0 0 stack ram 0 0
+  do
+    buf <- Buffer.newBuffer 4096
+    case buf of
+      Just ram =>
+        let v = Vect.replicate 16 0 in
+        let stack = Vect.replicate 16 0 in
+        pure $ MkChip8 v 0 0 0 stack ram 0 0
+      Nothing =>
+        do
+          putStrLn "Not enough memory"
+          System.exitFailure
 
 getRegister : (chip : Chip8) -> (index : Fin 16) -> Bits8
 getRegister c i =
