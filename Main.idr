@@ -65,6 +65,11 @@ getOpcode c =
     b2 <- Buffer.getByte ram (pc + 1)
     pure $ (cast b1) * 0x100 + (cast b2)
 
+incrementPC : (chip : Chip8) -> Chip8
+incrementPC c =
+  let newPC = (PC c) + 2 in
+  record { PC = newPC } c
+
 getRegister : (chip : Chip8) -> (index : Fin 16) -> Bits8
 getRegister c i =
   Vect.index i (V c)
@@ -98,22 +103,11 @@ readROMFromFile filename =
           putStrLn "Could not read ROM"
           System.exitFailure
 
-runROM : (chip : Chip8) -> (address : Int) -> IO ()
-runROM c address =
+dispatch : (chip : Chip8) -> (opcode : Bits16) -> IO Chip8
+dispatch c op =
   do
-    op <- getOpcode c
     putStrLn (show $ the Bits16 op)
-  -- increment PC
-  -- dispatch
-  -- loop?
-
-main : IO ()
-main = do
-  chip <- newChip
-  rom <- readROMFromFile "./roms/maze.rom"
-  loadROMAt chip rom StartingAddress
-  runROM chip StartingAddress
-  putStrLn "Fin."
+    ?test
 
 -- TODO
 -- implement basic structure of interpreter
@@ -124,3 +118,18 @@ main = do
 -- Set Vx = kk.
 
 -- The interpreter puts the value kk into register Vx.
+
+runCPU : (chip : Chip8) -> IO ()
+runCPU c =
+  do
+    op <- getOpcode c
+    modifiedC <- dispatch (incrementPC c) op
+    runCPU modifiedC
+
+main : IO ()
+main = do
+  chip <- newChip
+  rom <- readROMFromFile "./roms/maze.rom"
+  loadROMAt chip rom StartingAddress
+  runCPU chip
+  putStrLn "Fin."
