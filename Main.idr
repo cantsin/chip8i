@@ -104,49 +104,64 @@ readROMFromFile filename =
           putStrLn "Could not read ROM"
           System.exitFailure
 
+Register : Type
+Register = Bits8 -- TODO 4 bit value
+
+Key : Type
+Key = Bits8 -- TODO 4 bit value
+
+Sprite : Type
+Sprite = Bits8 -- TODO 4 bit value
+
+Address : Type
+Address = Bits16 -- TODO 12 bit value
+
+Value : Type
+Value = Bits8
+
 data Opcode =
   -- no parameter
     ClearScreen
   | Return
   -- address
-  | Jump Bits16
-  | Call Bits16
+  | Jump Address
+  | Call Address
   -- register and value
-  | SkipIfEq     Bits8 Bits16
-  | SkipIfNeq    Bits8 Bits16
-  | LoadRegister Bits8 Bits16
-  | AddRegister  Bits8 Bits16
-  | Random       Bits8 Bits16
+  | SkipIfEq     Register Value
+  | SkipIfNeq    Register Value
+  | LoadRegister Register Value
+  | AddRegister  Register Value
+  | Random       Register Value
   -- register to register
-  | SkipIfRegisterEq   Bits8 Bits8
-  | SkipIfRegisterNeq  Bits8 Bits8
-  | CopyRegister       Bits8 Bits8
-  | OrRegister         Bits8 Bits8
-  | AndRegister        Bits8 Bits8
-  | XorRegister        Bits8 Bits8
-  | AddRegisterCarry   Bits8 Bits8
-  | SubRegister        Bits8 Bits8
-  | SubRegisterInverse Bits8 Bits8
-  | ShiftRightRegister Bits8 Bits8
-  | ShiftLeftRegister  Bits8 Bits8
+  | SkipIfRegisterEq   Register Register
+  | SkipIfRegisterNeq  Register Register
+  | CopyRegister       Register Register
+  | OrRegister         Register Register
+  | AndRegister        Register Register
+  | XorRegister        Register Register
+  | AddRegisterCarry   Register Register
+  | SubRegister        Register Register
+  | SubRegisterInverse Register Register
+  | ShiftRightRegister Register Register
+  | ShiftLeftRegister  Register Register
   -- value
-  | LoadRegisterI Bits16
-  | JumpRegister0 Bits16
+  | LoadRegisterI Bits16 -- TODO spec is ambiguous, I is 8 bit but we're loading a 12 bit value?
+  | JumpRegister0 Address
   -- registers and value
-  | Display Bits8 Bits8 Bits8
+  | Display Register Register Sprite
   -- key
-  | SkipIfKeyPressed     Bits8
-  | SkipIfKeyNotPressed  Bits8
-  | LoadRegisterIFromKey Bits8
+  | SkipIfKeyPressed     Key
+  | SkipIfKeyNotPressed  Key
+  | LoadRegisterIFromKey Key
   -- register
-  | LoadRegisterDelay    Bits8
-  | WaitForKeyPress      Bits8
-  | SetDelayFromRegister Bits8
-  | SetSoundFromRegister Bits8
-  | AddRegisterI         Bits8
-  | StoreBCD             Bits8
-  | DumpRegisters        Bits8
-  | LoadRegisters        Bits8
+  | LoadRegisterDelay    Register
+  | WaitForKeyPress      Register
+  | SetDelayFromRegister Register
+  | SetSoundFromRegister Register
+  | AddRegisterI         Register
+  | StoreBCD             Register
+  | DumpRegisters        Register
+  | LoadRegisters        Register
 
 opcode : (value : Bits16) -> Opcode
 opcode v =
@@ -172,7 +187,7 @@ clearScreen =
 -- subroutineReturn : (chip : Chip8) -> Chip8
 -- subroutineReturn c =
 --   let newStack = (Stack c) ++ [PC c] in
---   record { SP $= (+ 1), Stack = newStack } c
+--   record { SP $= (+ 1), Stack = newSta asdfsadfsadfasdfck } c
 
 -- 1nnn - JP addr
 jumpDirect : (chip : Chip8) -> (address : Bits16) -> Chip8
