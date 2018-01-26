@@ -104,72 +104,55 @@ readROMFromFile filename =
           putStrLn "Could not read ROM"
           System.exitFailure
 
-data OpcodeArguments =
-     None
-     | Address Bits16 -- 3 nibbles
-     | Value Bits16 -- 3 nibbles
-     | Key Bits8 -- 1 nibble
-     | Register Bits8 -- 1 nibble
-     | Registers Bits8 Bits8 -- 1 nibble, 1 nibble
-     | RegisterAndValue Bits8 Bits16 -- 1 nibble, 2 nibbles
-     | DisplayValues Bits8 Bits8 Bits8 -- 1 nibble, 1 nibble, 1 nibble
-
-data Opcode            : OpcodeArguments -> Type where
+data Opcode =
   -- no parameter
-  ClearScreen          : Opcode None
-  Return               : Opcode None
+    ClearScreen
+  | Return
   -- address
-  Jump                 : (a : Bits16) -> Opcode (Address a)
-  Call                 : (a : Bits16) -> Opcode (Address a)
+  | Jump Bits16
+  | Call Bits16
   -- register and value
-  SkipIfEq             : (r : Bits8) -> (v : Bits16) -> Opcode (RegisterAndValue r v)
-  SkipIfNeq            : (r : Bits8) -> (v : Bits16) -> Opcode (RegisterAndValue r v)
-  LoadRegister         : (r : Bits8) -> (v : Bits16) -> Opcode (RegisterAndValue r v)
-  AddRegister          : (r : Bits8) -> (v : Bits16) -> Opcode (RegisterAndValue r v)
-  Random               : (r : Bits8) -> (v : Bits16) -> Opcode (RegisterAndValue r v)
+  | SkipIfEq     Bits8 Bits16
+  | SkipIfNeq    Bits8 Bits16
+  | LoadRegister Bits8 Bits16
+  | AddRegister  Bits8 Bits16
+  | Random       Bits8 Bits16
   -- register to register
-  SkipIfRegisterEq     : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  SkipIfRegisterNeq    : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  CopyRegister         : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  OrRegister           : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  AndRegister          : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  XorRegister          : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  AddRegisterCarry     : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  SubRegister          : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  SubRegisterInverse   : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  ShiftRightRegister   : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
-  ShiftLeftRegister    : (r1 : Bits8) -> (r2 : Bits8) -> Opcode (Registers r1 r2)
+  | SkipIfRegisterEq   Bits8 Bits8
+  | SkipIfRegisterNeq  Bits8 Bits8
+  | CopyRegister       Bits8 Bits8
+  | OrRegister         Bits8 Bits8
+  | AndRegister        Bits8 Bits8
+  | XorRegister        Bits8 Bits8
+  | AddRegisterCarry   Bits8 Bits8
+  | SubRegister        Bits8 Bits8
+  | SubRegisterInverse Bits8 Bits8
+  | ShiftRightRegister Bits8 Bits8
+  | ShiftLeftRegister  Bits8 Bits8
   -- value
-  LoadRegisterI        : (v : Bits16) -> Opcode (Value v)
-  JumpRegister0        : (v : Bits16) -> Opcode (Value v)
+  | LoadRegisterI Bits16
+  | JumpRegister0 Bits16
   -- registers and value
-  Display              : (r1 : Bits8) -> (r2 : Bits8) -> (v : Bits8) -> Opcode (DisplayValues r1 r2 v)
+  | Display Bits8 Bits8 Bits8
   -- key
-  SkipIfKeyPressed     : (k : Bits8) -> Opcode (Key k)
-  SkipIfKeyNotPressed  : (k : Bits8) -> Opcode (Key k)
-  LoadRegisterIFromKey : (k : Bits8) -> Opcode (Key k)
+  | SkipIfKeyPressed     Bits8
+  | SkipIfKeyNotPressed  Bits8
+  | LoadRegisterIFromKey Bits8
   -- register
-  LoadRegisterDelay    : (r : Bits8) -> Opcode (Register r)
-  WaitForKeyPress      : (r : Bits8) -> Opcode (Register r)
-  SetDelayFromRegister : (r : Bits8) -> Opcode (Register r)
-  SetSoundFromRegister : (r : Bits8) -> Opcode (Register r)
-  AddRegisterI         : (r : Bits8) -> Opcode (Register r)
-  StoreBCD             : (r : Bits8) -> Opcode (Register r)
-  DumpRegisters        : (r : Bits8) -> Opcode (Register r)
-  LoadRegisters        : (r : Bits8) -> Opcode (Register r)
+  | LoadRegisterDelay    Bits8
+  | WaitForKeyPress      Bits8
+  | SetDelayFromRegister Bits8
+  | SetSoundFromRegister Bits8
+  | AddRegisterI         Bits8
+  | StoreBCD             Bits8
+  | DumpRegisters        Bits8
+  | LoadRegisters        Bits8
 
-x : OpcodeArguments
-x = Address 0x100
-
-j : Opcode (Address 0x100)
-j = Jump 0x100
-
-opcode : (value : Bits16) -> Opcode a
+opcode : (value : Bits16) -> Opcode
 opcode v =
   case v of
     0x00e0 => ClearScreen
-    0x0055 => Jump 0x100
-    _ => ?test2
+    n => Jump n
 
 dispatch : (chip : Chip8) -> (opcode : Bits16) -> IO Chip8
 dispatch c op =
