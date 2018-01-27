@@ -154,6 +154,8 @@ opcode op =
   let family: Int = cast $ extractFirstNibble op in
   opcodeFamily family op
 
+-- opcode implementations
+
 clearScreen : (chip : Chip8) -> Chip8
 clearScreen c =
   ?clear
@@ -173,24 +175,18 @@ skipIfRegisterEqual c r v =
   else
     c
 
-loadRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
-loadRegisterDirect c r v = setRegister c r v
-
 addRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
 addRegisterDirect c r v =
   let value = getRegister c r in
   setRegister c r (value + v)
 
-loadRegisterI : (chip : Chip8) -> (value : LargeValue) -> Chip8
-loadRegisterI = setRegisterI
-
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch c ClearScreen = pure $ clearScreen c
 dispatch c (Jump addr) = pure $ jumpDirect c addr
 dispatch c (SkipIfEq r v) = pure $ skipIfRegisterEqual c r v
-dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
+dispatch c (LoadRegister r v) = pure $ setRegister c r v
 dispatch c (AddRegister r v) = pure $ addRegisterDirect c r v
-dispatch c (LoadRegisterI r) = pure $ loadRegisterI c r
+dispatch c (LoadRegisterI r) = pure $ setRegisterI c r
 dispatch c opcode =
   do
     putStrLn "(unhandled)"
