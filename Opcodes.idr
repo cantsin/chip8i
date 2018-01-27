@@ -111,11 +111,11 @@ opcodeFamily 0 op =
     0x00e0 => ClearScreen
     0x00ee => Return
     _ => Invalid op
-opcodeFamily 1 op = Jump (extractAddress op)
-opcodeFamily 2 op = Call (extractAddress op)
-opcodeFamily 3 op = SkipIfEq (extractSecondNibble op) (extractSecondByte op)
-opcodeFamily 4 op = SkipIfNeq (extractSecondNibble op) (extractSecondByte op)
-opcodeFamily 5 op =
+opcodeFamily 0x1 op = Jump (extractAddress op)
+opcodeFamily 0x2 op = Call (extractAddress op)
+opcodeFamily 0x3 op = SkipIfEq (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily 0x4 op = SkipIfNeq (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily 0x5 op =
   let r1 = extractSecondNibble op in
   let r2 = extractThirdNibble op in
   let valid = extractFourthNibble op in
@@ -123,7 +123,16 @@ opcodeFamily 5 op =
       SkipIfRegisterEq r1 r2
     else
       Invalid op
-opcodeFamily 6 op = LoadRegister (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily 0x6 op = LoadRegister (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily 0x7 op = AddRegister (extractSecondNibble op) (extractSecondByte op)
+-- opcodeFamily 0x8
+-- opcodeFamily 0x9
+opcodeFamily 0xa op = LoadRegisterI (extractAddress op)
+-- opcodeFamily 0xb
+opcodeFamily 0xc op = Random (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily 0xd op = Display (extractSecondNibble op) (extractThirdNibble op) (extractFourthNibble op)
+-- opcodeFamily 0xe
+-- opcodeFamily 0xf
 opcodeFamily _ op = Invalid op
 
 opcode : (value : Bits16) -> Opcode
@@ -155,8 +164,8 @@ dispatch c (Jump addr) = pure $ jumpDirect c addr
 -- dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
 dispatch c opcode =
   do
-    putStrLn $ "unhandled " ++ (show $ opcode)
-    pure $ c
+    putStrLn "(unhandled)"
+    pure c
 
 export
 partial
@@ -165,10 +174,11 @@ runCPU c =
   do
     op <- getOpcode c
     instruction <- pure $ opcode op
+    putStrLn $ (show c) ++ " => " ++ (show instruction)
     case instruction of
       Invalid _ =>
         do
-          putStrLn $ "hit invalid opcode " ++ (show instruction)
+          putStrLn $ "terminating unexpectedly"
       _ =>
         do
           modifiedC <- dispatch (incrementPC c) instruction

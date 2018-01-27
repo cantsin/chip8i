@@ -28,6 +28,10 @@ record Chip8 where
   ST : Bits8
 
 export
+Show Chip8 where
+  show c = show (PC c)
+
+export
 newChip : IO Chip8
 newChip =
   do
