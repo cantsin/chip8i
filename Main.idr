@@ -2,8 +2,10 @@ module Main
 
 import Data.Vect
 import Data.Buffer
-import Data.Bits
 import System
+
+import Opcodes
+import Utilities
 
 %default total
 
@@ -31,17 +33,6 @@ record Chip8 where
   DT : Bits8
   -- sound timer register ST
   ST : Bits8
-
--- not sure why these casts are not included already. goes without
--- saying that some conversions are potentially lossy.
-Cast Int Bits16 where
-  cast = prim__zextInt_B16
-
-Cast Bits16 Int where
-  cast = prim__zextB16_Int
-
-Cast Bits8 Bits16 where
-  cast = prim__zextB8_B16
 
 newChip : IO Chip8
 newChip =
@@ -103,85 +94,6 @@ readROMFromFile filename =
         do
           putStrLn "Could not read ROM"
           System.exitFailure
-
-Register : Type
-Register = Bits8 -- TODO 4 bit value
-
-Key : Type
-Key = Bits8 -- TODO 4 bit value
-
-Sprite : Type
-Sprite = Bits8 -- TODO 4 bit value
-
-Address : Type
-Address = Bits16 -- TODO 12 bit value
-
-Value : Type
-Value = Bits8
-
-data Opcode =
-  -- no parameter
-    ClearScreen
-  -- | Return
-  -- address
-  | Jump Address
-  -- | Call Address
-  -- -- register and value
-  -- | SkipIfEq     Register Value
-  -- | SkipIfNeq    Register Value
-  -- | LoadRegister Register Value
-  -- | AddRegister  Register Value
-  -- | Random       Register Value
-  -- -- register to register
-  -- | SkipIfRegisterEq   Register Register
-  -- | SkipIfRegisterNeq  Register Register
-  -- | CopyRegister       Register Register
-  -- | OrRegister         Register Register
-  -- | AndRegister        Register Register
-  -- | XorRegister        Register Register
-  -- | AddRegisterCarry   Register Register
-  -- | SubRegister        Register Register
-  -- | SubRegisterInverse Register Register
-  -- | ShiftRightRegister Register Register
-  -- | ShiftLeftRegister  Register Register
-  -- -- value
-  -- | LoadRegisterI Bits16 -- TODO spec is ambiguous, I is 8 bit but we're loading a 12 bit value?
-  -- | JumpRegister0 Address
-  -- -- registers and value
-  -- | Display Register Register Sprite
-  -- -- key
-  -- | SkipIfKeyPressed     Key
-  -- | SkipIfKeyNotPressed  Key
-  -- | LoadRegisterIFromKey Key
-  -- -- register
-  -- | LoadRegisterDelay    Register
-  -- | WaitForKeyPress      Register
-  -- | SetDelayFromRegister Register
-  -- | SetSoundFromRegister Register
-  -- | AddRegisterI         Register
-  -- | StoreBCD             Register
-  -- | DumpRegisters        Register
-  -- | LoadRegisters        Register
-
-Show Opcode where
-  show ClearScreen = "CLS"
-  show (Jump a) = "JMP " ++ show a
-
-opcode : (value : Bits16) -> Opcode
-opcode v =
-  let shift = intToBits 12 in
-  let mask = intToBits 0xf000 in
-  let opInt : Int = (cast v) in
-  let op: Bits 16 = intToBits (cast opInt) in
-  let family = (and op mask) `shiftRightLogical` shift in
-  case bitsToInt family of
-    0 => ClearScreen
-    n => Jump (the Bits16 $ fromInteger n)
-
-  -- case v of
-  --   0x00e0 => ClearScreen
-  --   0x00ee => Return
-  --   n => Jump n
 
 dispatch : (chip : Chip8) -> (opcode : Bits16) -> IO Chip8
 dispatch c op =
