@@ -69,7 +69,7 @@ data Opcode =
 
 export
 Show Opcode where
-  show (Invalid op) = "INVALID " ++ show op
+  show (Invalid op) = show op ++ " ???"
   show ClearScreen = "CLS"
   show Return = "RET"
   show (Jump a) = "JP " ++ show a
@@ -126,19 +126,16 @@ opcodeFamily 5 op =
 opcodeFamily 6 op = LoadRegister (extractSecondNibble op) (extractSecondByte op)
 opcodeFamily _ op = Invalid op
 
--- TODO
--- implement basic structure of interpreter
-
 -- 00E0 - CLS
 clearScreen : (chip : Chip8) -> Chip8
 clearScreen c =
-  c
+  ?clear
 
 -- 00EE - RET
 -- subroutineReturn : (chip : Chip8) -> Chip8
 -- subroutineReturn c =
 --   let newStack = (Stack c) ++ [PC c] in
---   record { SP $= (+ 1), Stack = newSta asdfsadfsadfasdfck } c
+--   record { SP $= (+ 1), Stack = newStack } c
 
 -- 1nnn - JP addr
 jumpDirect : (chip : Chip8) -> (address : Bits16) -> Chip8
@@ -154,12 +151,12 @@ opcode op =
   let family: Int = cast $ extractFirstNibble op in
   opcodeFamily family op
 
-dispatch : (chip : Chip8) -> (opcode : Bits16) -> IO Chip8
-dispatch c op =
+dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
+dispatch c ClearScreen = pure $ clearScreen c
+dispatch c opcode =
   do
-    putStrLn (show $ the Bits16 op)
-    putStrLn (show $ opcode op)
-    ?test
+    putStrLn $ "unhandled " ++ (show $ opcode)
+    pure $ c
 
 export
 partial
@@ -167,5 +164,11 @@ runCPU : (chip : Chip8) -> IO ()
 runCPU c =
   do
     op <- getOpcode c
-    modifiedC <- dispatch (incrementPC c) op
-    runCPU modifiedC
+    case opcode op of
+      Invalid op =>
+        do
+          putStrLn $ "hit invalid opcode " ++ (show op)
+      instruction =>
+        do
+          modifiedC <- dispatch (incrementPC c) instruction
+          runCPU modifiedC
