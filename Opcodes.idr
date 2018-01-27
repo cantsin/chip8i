@@ -9,6 +9,14 @@ import Utilities
 Register : Type
 Register = Bits8 -- TODO 4 bit value
 
+Cast Register (Fin 16) where
+  cast r =
+    let reg: Int = cast $ the Bits8 r in
+    let fin = fromIntegerNat $ cast reg in
+    case natToFin fin 16 of
+      Just f => f
+      Nothing => idris_crash "register value exceeded bounds" -- sad face
+
 Key : Type
 Key = Bits8 -- TODO 4 bit value
 
@@ -153,16 +161,14 @@ clearScreen c =
 --   record { SP $= (+ 1), Stack = newStack } c
 
 jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
-jumpDirect c address =
-  record { PC = address } c
+jumpDirect = setPC
+
+skipIfRegisterEqual : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+skipIfRegisterEqual c r v =
+  ?test
 
 loadRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
-loadRegisterDirect c r v =
-  let reg: Int = cast $ the Bits8 r in
-  let fin = fromIntegerNat $ cast reg in
-  case natToFin fin 16 of
-    Just f => setRegister c f v
-    Nothing => idris_crash "loadRegisterDirect" -- sad face
+loadRegisterDirect c r v = setRegister c (cast r) v
 
 loadRegisterI : (chip : Chip8) -> (value : LargeValue) -> Chip8
 loadRegisterI = setRegisterI
@@ -171,6 +177,7 @@ dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch c ClearScreen = pure $ clearScreen c
 -- dispatch c Return = pure $ subroutineReturn c
 dispatch c (Jump addr) = pure $ jumpDirect c addr
+dispatch c (SkipIfEq r v) = pure $ skipIfRegisterEqual c r v
 dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
 dispatch c (LoadRegisterI r) = pure $ loadRegisterI c r
 dispatch c opcode =

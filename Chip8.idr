@@ -29,7 +29,7 @@ record Chip8 where
 
 export
 Show Chip8 where
-  show c = show (PC c)
+  show c = show (PC c) ++ " " ++ show (V c) ++ " " ++ show (I c)
 
 export
 newChip : IO Chip8
@@ -66,6 +66,11 @@ export
 incrementPC : (chip : Chip8) -> Chip8
 incrementPC c =
   record { PC $= (+ 2) } c
+
+export
+setPC : (chip : Chip8) -> (value : Bits16) -> Chip8
+setPC c v =
+  record { PC = v } c
 
 export
 getRegister : (chip : Chip8) -> (index : Fin 16) -> Bits8
