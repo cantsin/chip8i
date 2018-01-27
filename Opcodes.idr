@@ -17,9 +17,6 @@ extractFirstRegister v = cast $ extractSecondNibble v
 extractSecondRegister : (value : Bits16) -> Register
 extractSecondRegister v = cast $ extractThirdNibble v
 
-Key : Type
-Key = Fin 16
-
 Sprite : Type
 Sprite = Fin 16
 
@@ -68,10 +65,9 @@ data Opcode =
   | JumpRegister0 Address
   -- registers and value
   | Display Register Register Sprite
-  -- key
-  | SkipIfKeyPressed     Key
-  | SkipIfKeyNotPressed  Key
   -- register
+  | SkipIfKeyPressed       Register
+  | SkipIfKeyNotPressed    Register
   | LoadRegisterWithSprite Register
   | LoadRegisterDelay      Register
   | WaitForKeyPress        Register
@@ -111,8 +107,8 @@ Show Opcode where
   show (JumpRegister0 a)          = "JP V0, "  ++ show a
   show (Random r v)               = "RND "     ++ show r  ++ ", " ++ show v
   show (Display r1 r2 s)          = "DRW "     ++ show r1 ++ ", " ++ show r2 ++ ", S" ++ show (finToNat s)
-  show (SkipIfKeyPressed k)       = "SKP "     ++ show k
-  show (SkipIfKeyNotPressed k)    = "SKNP "    ++ show k
+  show (SkipIfKeyPressed r)       = "SKP "     ++ show r
+  show (SkipIfKeyNotPressed r)    = "SKNP "    ++ show r
   show (LoadRegisterDelay r)      = "LD "      ++ show r  ++ ", DT"
   show (WaitForKeyPress r)        = "LD "      ++ show r  ++ ", K"
   show (SetDelayFromRegister r)   = "LD DT, "  ++ show r
