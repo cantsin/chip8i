@@ -126,33 +126,33 @@ opcodeFamily 5 op =
 opcodeFamily 6 op = LoadRegister (extractSecondNibble op) (extractSecondByte op)
 opcodeFamily _ op = Invalid op
 
--- 00E0 - CLS
-clearScreen : (chip : Chip8) -> Chip8
-clearScreen c =
-  ?clear
-
--- 00EE - RET
--- subroutineReturn : (chip : Chip8) -> Chip8
--- subroutineReturn c =
---   let newStack = (Stack c) ++ [PC c] in
---   record { SP $= (+ 1), Stack = newStack } c
-
--- 1nnn - JP addr
-jumpDirect : (chip : Chip8) -> (address : Bits16) -> Chip8
-jumpDirect c address =
-  record { PC = address } c
-
--- 6xkk - LD Vx, byte
-loadRegisterDirect : (chip : Chip8) -> (index : Fin 16) -> (value : Bits8) -> Chip8
-loadRegisterDirect = setRegister
-
 opcode : (value : Bits16) -> Opcode
 opcode op =
   let family: Int = cast $ extractFirstNibble op in
   opcodeFamily family op
 
+clearScreen : (chip : Chip8) -> Chip8
+clearScreen c =
+  ?clear
+
+-- subroutineReturn : (chip : Chip8) -> Chip8
+-- subroutineReturn c =
+--   let newStack = (Stack c) ++ [PC c] in
+--   record { SP $= (+ 1), Stack = newStack } c
+
+jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
+jumpDirect c address =
+  record { PC = address } c
+
+-- loadRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+-- loadRegisterDirect c r v =
+--   setRegister c (natToFin r) v
+
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch c ClearScreen = pure $ clearScreen c
+-- dispatch c Return = pure $ subroutineReturn c
+dispatch c (Jump addr) = pure $ jumpDirect c addr
+-- dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
 dispatch c opcode =
   do
     putStrLn $ "unhandled " ++ (show $ opcode)
@@ -164,11 +164,12 @@ runCPU : (chip : Chip8) -> IO ()
 runCPU c =
   do
     op <- getOpcode c
-    case opcode op of
-      Invalid op =>
+    instruction <- pure $ opcode op
+    case instruction of
+      Invalid _ =>
         do
-          putStrLn $ "hit invalid opcode " ++ (show op)
-      instruction =>
+          putStrLn $ "hit invalid opcode " ++ (show instruction)
+      _ =>
         do
           modifiedC <- dispatch (incrementPC c) instruction
           runCPU modifiedC
