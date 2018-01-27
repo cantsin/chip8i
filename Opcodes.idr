@@ -29,9 +29,9 @@ data Opcode =
   -- address
   | Jump Address
   | Call Address
-  -- -- register and value
-  -- | SkipIfEq     Register Value
-  -- | SkipIfNeq    Register Value
+  -- register and value
+  | SkipIfEq     Register Value
+  | SkipIfNeq    Register Value
   -- | LoadRegister Register Value
   -- | AddRegister  Register Value
   -- | Random       Register Value
@@ -73,14 +73,16 @@ Show Opcode where
   show Return = "RET"
   show (Jump a) = "JP " ++ show a
   show (Call a) = "CALL " ++ show a
+  show (SkipIfEq r v) = "SE V" ++ show r ++ ", " ++ show v
+  show (SkipIfNeq r v) = "SNE V" ++ show r ++ ", " ++ show v
 
 export
 opcode : (value : Bits16) -> Opcode
 opcode op =
-  let family = extractNibble op 3 in
+  let family: Int = cast $ extractFirstNibble op in
   case family of
     0 => ClearScreen
-    n => Jump (the Bits16 $ fromInteger n)
+    n => Jump (cast n)
 
 opcodeFamily : (n : Int) -> (op : Bits16) -> Opcode
 opcodeFamily 0 op =
@@ -88,5 +90,7 @@ opcodeFamily 0 op =
     0x00e0 => ClearScreen
     0x00ee => Return
     _ => Invalid op
-opcodeFamily 1 op = Jump $ extractAddress op
-opcodeFamily 2 op = Call $ extractAddress op
+opcodeFamily 1 op = Jump (extractAddress op)
+opcodeFamily 2 op = Call (extractAddress op)
+opcodeFamily 3 op = SkipIfEq (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily 4 op = SkipIfNeq (extractSecondNibble op) (extractSecondByte op)
