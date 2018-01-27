@@ -27,11 +27,15 @@ extractSprite v = cast $ extractFourthNibble v
 Address : Type
 Address = Bits16 -- TODO 12 bit value
 
+extractAddress : (value : Bits16) -> Address
+extractAddress = extractMask0xfff
+
 Value : Type
 Value = Bits8
 
-LargeValue : Type
-LargeValue = Bits16 -- TODO 12 bit value
+-- always in position 0x00VV
+extractValue : (value : Bits16) -> Value
+extractValue = extractSecondByte
 
 export
 data Opcode =
@@ -40,31 +44,30 @@ data Opcode =
   | ClearScreen
   | Return
   -- address
-  | Jump Address
-  | Call Address
+  | Jump                   Address
+  | Call                   Address
+  | LoadRegisterI          Address
+  | JumpRegister0          Address
   -- register and value
-  | SkipIfEq     Register Value
-  | SkipIfNeq    Register Value
-  | LoadRegister Register Value
-  | AddRegister  Register Value
-  | Random       Register Value
+  | SkipIfEq               Register Value
+  | SkipIfNeq              Register Value
+  | LoadRegister           Register Value
+  | AddRegister            Register Value
+  | Random                 Register Value
   -- register to register
-  | SkipIfRegisterEq   Register Register
-  | SkipIfRegisterNeq  Register Register
-  | CopyRegister       Register Register
-  | OrRegister         Register Register
-  | AndRegister        Register Register
-  | XorRegister        Register Register
-  | AddRegisterCarry   Register Register
-  | SubRegister        Register Register
-  | SubRegisterInverse Register Register
-  | ShiftRightRegister Register Register
-  | ShiftLeftRegister  Register Register
-  -- value
-  | LoadRegisterI LargeValue
-  | JumpRegister0 Address
+  | SkipIfRegisterEq       Register Register
+  | SkipIfRegisterNeq      Register Register
+  | CopyRegister           Register Register
+  | OrRegister             Register Register
+  | AndRegister            Register Register
+  | XorRegister            Register Register
+  | AddRegisterCarry       Register Register
+  | SubRegister            Register Register
+  | SubRegisterInverse     Register Register
+  | ShiftRightRegister     Register Register
+  | ShiftLeftRegister      Register Register
   -- registers and value
-  | Display Register Register Sprite
+  | Display                Register Register Sprite
   -- register
   | SkipIfKeyPressed       Register
   | SkipIfKeyNotPressed    Register
@@ -127,23 +130,22 @@ opcodeFamily 0 op =
     _ => Invalid op
 opcodeFamily 0x1 op = Jump (extractAddress op)
 opcodeFamily 0x2 op = Call (extractAddress op)
-opcodeFamily 0x3 op = SkipIfEq (extractFirstRegister op) (extractSecondByte op)
-opcodeFamily 0x4 op = SkipIfNeq (extractFirstRegister op) (extractSecondByte op)
+opcodeFamily 0x3 op = SkipIfEq (extractFirstRegister op) (extractValue op)
+opcodeFamily 0x4 op = SkipIfNeq (extractFirstRegister op) (extractValue op)
 opcodeFamily 0x5 op =
-  let r1 = extractFirstRegister op in
-  let r2 = extractSecondRegister op in
-  let valid = extractFourthNibble op in
-    if valid == 0 then
-      SkipIfRegisterEq r1 r2
-    else
-      Invalid op
-opcodeFamily 0x6 op = LoadRegister (extractFirstRegister op) (extractSecondByte op)
-opcodeFamily 0x7 op = AddRegister (extractFirstRegister op) (extractSecondByte op)
+  case extractFourthNibble op of
+    0 => SkipIfRegisterEq (extractFirstRegister op) (extractSecondRegister op)
+    _ => Invalid op
+opcodeFamily 0x6 op = LoadRegister (extractFirstRegister op) (extractValue op)
+opcodeFamily 0x7 op = AddRegister (extractFirstRegister op) (extractValue op)
 -- opcodeFamily 0x8
--- opcodeFamily 0x9
+opcodeFamily 0x9 op =
+  case extractFourthNibble op of
+    0 => SkipIfRegisterNeq (extractFirstRegister op) (extractSecondRegister op)
+    _ => Invalid op
 opcodeFamily 0xa op = LoadRegisterI (extractAddress op)
--- opcodeFamily 0xb
-opcodeFamily 0xc op = Random (extractFirstRegister op) (extractSecondByte op)
+opcodeFamily 0xb op = JumpRegister0 (extractAddress op)
+opcodeFamily 0xc op = Random (extractFirstRegister op) (extractValue op)
 opcodeFamily 0xd op = Display (extractFirstRegister op) (extractSecondRegister op) (extractSprite op)
 -- opcodeFamily 0xe
 -- opcodeFamily 0xf

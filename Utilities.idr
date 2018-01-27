@@ -25,6 +25,15 @@ export
 Cast Bits8 Bits16 where
   cast = prim__zextB8_B16
 
+export
+Cast Bits8 (Fin 16) where
+  cast x =
+    let reg: Int = cast x in
+    let fin = fromIntegerNat $ cast reg in
+    case natToFin fin 16 of
+      Just f => f
+      Nothing => idris_crash "value exceeded bounds" -- sad face
+
 Cast Bits16 (Bits 16) where
   cast x =
     let asInt: Int = cast x in
@@ -34,15 +43,6 @@ Cast (Bits 16) Bits16 where
   cast x =
     let asInteger: Integer = bitsToInt x in
     cast $ the Int $ fromInteger asInteger
-
-export
-Cast Bits8 (Fin 16) where
-  cast x =
-    let reg: Int = cast x in
-    let fin = fromIntegerNat $ cast reg in
-    case natToFin fin 16 of
-      Just f => f
-      Nothing => idris_crash "value exceeded bounds" -- sad face
 
 extractNibble : (value : Bits16) -> (n : Integer) -> Bits8
 extractNibble value n =
@@ -86,8 +86,8 @@ extractSecondByte value =
   cast $ the Int $ fromInteger $ bitsToInt result
 
 export
-extractAddress : (value : Bits16) -> Bits16
-extractAddress value =
+extractMask0xfff : (value : Bits16) -> Bits16
+extractMask0xfff value =
   let v: Bits 16 = cast value in
   let mask = intToBits 0x0fff in
   let result = and v mask in
