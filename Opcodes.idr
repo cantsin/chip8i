@@ -32,11 +32,11 @@ data Opcode =
   -- register and value
   | SkipIfEq     Register Value
   | SkipIfNeq    Register Value
-  -- | LoadRegister Register Value
+  | LoadRegister Register Value
   -- | AddRegister  Register Value
   -- | Random       Register Value
-  -- -- register to register
-  -- | SkipIfRegisterEq   Register Register
+  -- register to register
+  | SkipIfRegisterEq   Register Register
   -- | SkipIfRegisterNeq  Register Register
   -- | CopyRegister       Register Register
   -- | OrRegister         Register Register
@@ -75,14 +75,8 @@ Show Opcode where
   show (Call a) = "CALL " ++ show a
   show (SkipIfEq r v) = "SE V" ++ show r ++ ", " ++ show v
   show (SkipIfNeq r v) = "SNE V" ++ show r ++ ", " ++ show v
-
-export
-opcode : (value : Bits16) -> Opcode
-opcode op =
-  let family: Int = cast $ extractFirstNibble op in
-  case family of
-    0 => ClearScreen
-    n => Jump (cast n)
+  show (SkipIfRegisterEq r1 r2) = "SE V" ++ show r1 ++ ", V" ++ show r2
+  show (LoadRegister r v) = "LD V" ++ show r ++ ", " ++ show v
 
 opcodeFamily : (n : Int) -> (op : Bits16) -> Opcode
 opcodeFamily 0 op =
@@ -94,3 +88,19 @@ opcodeFamily 1 op = Jump (extractAddress op)
 opcodeFamily 2 op = Call (extractAddress op)
 opcodeFamily 3 op = SkipIfEq (extractSecondNibble op) (extractSecondByte op)
 opcodeFamily 4 op = SkipIfNeq (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily 5 op =
+  let r1 = extractSecondNibble op in
+  let r2 = extractThirdNibble op in
+  let valid = extractFourthNibble op in
+    if valid == 0 then
+      SkipIfRegisterEq r1 r2
+    else
+      Invalid op
+opcodeFamily 6 op = LoadRegister (extractSecondNibble op) (extractSecondByte op)
+opcodeFamily _ op = Invalid op
+
+export
+opcode : (value : Bits16) -> Opcode
+opcode op =
+  let family: Int = cast $ extractFirstNibble op in
+  opcodeFamily family op

@@ -8,7 +8,6 @@ export
 Cast Int Bits16 where
   cast = prim__zextInt_B16
 
-export
 Cast Int Bits8 where
   cast = prim__truncInt_B8
 
@@ -24,13 +23,11 @@ export
 Cast Bits8 Bits16 where
   cast = prim__zextB8_B16
 
-export
 Cast Bits16 (Bits 16) where
   cast x =
     let asInt: Int = cast x in
     intToBits $ the Integer $ cast asInt
 
-export
 Cast (Bits 16) Bits16 where
   cast x =
     let asInteger: Integer = bitsToInt x in
