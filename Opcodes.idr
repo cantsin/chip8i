@@ -156,7 +156,11 @@ clearScreen c =
   ?clear
 
 jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
-jumpDirect = setPC
+jumpDirect c addr =
+  if (getPC c == (addr + 2)) then
+    ?infiniteLoop
+  else
+    setPC c addr
 
 skipIfRegisterEqual : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
 skipIfRegisterEqual c r v =

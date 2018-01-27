@@ -73,6 +73,10 @@ setPC c v =
   record { PC = v } c
 
 export
+getPC : (chip : Chip8) -> Bits16
+getPC c = PC c
+
+export
 getRegister : (chip : Chip8) -> (index : Fin 16) -> Bits8
 getRegister c i =
   Vect.index i (V c)
