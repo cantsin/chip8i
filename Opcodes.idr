@@ -165,7 +165,11 @@ jumpDirect = setPC
 
 skipIfRegisterEqual : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
 skipIfRegisterEqual c r v =
-  ?test
+  let toCompare = getRegister c (cast r) in
+  if v == toCompare then
+    incrementPC c
+  else
+    c
 
 loadRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
 loadRegisterDirect c r v = setRegister c (cast r) v
