@@ -3,6 +3,7 @@ module Opcodes
 import Data.Bits
 import Data.Fin
 
+import Chip8
 import Utilities
 
 Register : Type
@@ -125,8 +126,46 @@ opcodeFamily 5 op =
 opcodeFamily 6 op = LoadRegister (extractSecondNibble op) (extractSecondByte op)
 opcodeFamily _ op = Invalid op
 
-export
+-- TODO
+-- implement basic structure of interpreter
+
+-- 00E0 - CLS
+clearScreen : (chip : Chip8) -> Chip8
+clearScreen c =
+  c
+
+-- 00EE - RET
+-- subroutineReturn : (chip : Chip8) -> Chip8
+-- subroutineReturn c =
+--   let newStack = (Stack c) ++ [PC c] in
+--   record { SP $= (+ 1), Stack = newSta asdfsadfsadfasdfck } c
+
+-- 1nnn - JP addr
+jumpDirect : (chip : Chip8) -> (address : Bits16) -> Chip8
+jumpDirect c address =
+  record { PC = address } c
+
+-- 6xkk - LD Vx, byte
+loadRegisterDirect : (chip : Chip8) -> (index : Fin 16) -> (value : Bits8) -> Chip8
+loadRegisterDirect = setRegister
+
 opcode : (value : Bits16) -> Opcode
 opcode op =
   let family: Int = cast $ extractFirstNibble op in
   opcodeFamily family op
+
+dispatch : (chip : Chip8) -> (opcode : Bits16) -> IO Chip8
+dispatch c op =
+  do
+    putStrLn (show $ the Bits16 op)
+    putStrLn (show $ opcode op)
+    ?test
+
+export
+partial
+runCPU : (chip : Chip8) -> IO ()
+runCPU c =
+  do
+    op <- getOpcode c
+    modifiedC <- dispatch (incrementPC c) op
+    runCPU modifiedC
