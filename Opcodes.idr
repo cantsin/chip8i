@@ -110,7 +110,7 @@ Show Opcode where
   show (LoadRegisterI a)          = "LD I, "   ++ show a
   show (JumpRegister0 a)          = "JP V0, "  ++ show a
   show (Random r v)               = "RND "     ++ show r  ++ ", " ++ show v
-  show (Display r1 r2 s)          = "DRW "     ++ show r1 ++ ", " ++ show r2 ++ ", " ++ show s
+  show (Display r1 r2 s)          = "DRW "     ++ show r1 ++ ", " ++ show r2 ++ ", S" ++ show (finToNat s)
   show (SkipIfKeyPressed k)       = "SKP "     ++ show k
   show (SkipIfKeyNotPressed k)    = "SKNP "    ++ show k
   show (LoadRegisterDelay r)      = "LD "      ++ show r  ++ ", DT"
