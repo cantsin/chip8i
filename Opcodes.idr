@@ -153,15 +153,19 @@ jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect c address =
   record { PC = address } c
 
--- loadRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
--- loadRegisterDirect c r v =
---   setRegister c (natToFin r) v
+loadRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+loadRegisterDirect c r v =
+  let reg: Int = cast $ the Bits8 r in
+  let fin = fromIntegerNat $ cast reg in
+  case natToFin fin 16 of
+    Just f => setRegister c f v
+    Nothing => idris_crash "loadRegisterDirect" -- sad face
 
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch c ClearScreen = pure $ clearScreen c
 -- dispatch c Return = pure $ subroutineReturn c
 dispatch c (Jump addr) = pure $ jumpDirect c addr
--- dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
+dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
 dispatch c opcode =
   do
     putStrLn "(unhandled)"

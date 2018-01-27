@@ -8,6 +8,7 @@ export
 Cast Int Bits16 where
   cast = prim__zextInt_B16
 
+export
 Cast Int Bits8 where
   cast = prim__truncInt_B8
 
