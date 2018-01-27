@@ -21,6 +21,9 @@ Address = Bits16 -- TODO 12 bit value
 Value : Type
 Value = Bits8
 
+LargeValue : Type
+LargeValue = Bits16 -- TODO 12 bit value
+
 export
 data Opcode =
   Invalid Bits16
@@ -49,7 +52,7 @@ data Opcode =
   | ShiftRightRegister Register Register
   | ShiftLeftRegister  Register Register
   -- value
-  | LoadRegisterI Bits16 -- TODO spec is ambiguous, I is 8 bit but we're loading a 12 bit value?
+  | LoadRegisterI LargeValue
   | JumpRegister0 Address
   -- registers and value
   | Display Register Register Sprite
@@ -161,11 +164,15 @@ loadRegisterDirect c r v =
     Just f => setRegister c f v
     Nothing => idris_crash "loadRegisterDirect" -- sad face
 
+loadRegisterI : (chip : Chip8) -> (value : LargeValue) -> Chip8
+loadRegisterI = setRegisterI
+
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch c ClearScreen = pure $ clearScreen c
 -- dispatch c Return = pure $ subroutineReturn c
 dispatch c (Jump addr) = pure $ jumpDirect c addr
 dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
+dispatch c (LoadRegisterI r) = pure $ loadRegisterI c r
 dispatch c opcode =
   do
     putStrLn "(unhandled)"

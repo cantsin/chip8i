@@ -77,3 +77,8 @@ setRegister : (chip : Chip8) -> (index : Fin 16) -> (value : Bits8) -> Chip8
 setRegister c i v =
   let newV = replaceAt i v (V c) in
   record { V = newV } c
+
+export
+setRegisterI : (chip : Chip8) -> (value : Bits16) -> Chip8
+setRegisterI c v =
+  record { I = v } c
