@@ -1,6 +1,7 @@
 module Utilities
 
 import Data.Bits
+import Data.Fin
 
 -- not sure why these casts are not included already. goes without
 -- saying that some conversions are potentially lossy.
@@ -33,6 +34,15 @@ Cast (Bits 16) Bits16 where
   cast x =
     let asInteger: Integer = bitsToInt x in
     cast $ the Int $ fromInteger asInteger
+
+export
+Cast Bits8 (Fin 16) where
+  cast x =
+    let reg: Int = cast x in
+    let fin = fromIntegerNat $ cast reg in
+    case natToFin fin 16 of
+      Just f => f
+      Nothing => idris_crash "value exceeded bounds" -- sad face
 
 extractNibble : (value : Bits16) -> (n : Integer) -> Bits8
 extractNibble value n =
