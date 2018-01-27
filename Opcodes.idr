@@ -1,6 +1,7 @@
 module Opcodes
 
 import Data.Bits
+import Data.Fin
 
 import Utilities
 
@@ -21,12 +22,13 @@ Value = Bits8
 
 export
 data Opcode =
+  Invalid Bits16
   -- no parameter
-    ClearScreen
-  -- | Return
+  | ClearScreen
+  | Return
   -- address
   | Jump Address
-  -- | Call Address
+  | Call Address
   -- -- register and value
   -- | SkipIfEq     Register Value
   -- | SkipIfNeq    Register Value
@@ -66,22 +68,25 @@ data Opcode =
 
 export
 Show Opcode where
+  show (Invalid op) = "INVALID " ++ show op
   show ClearScreen = "CLS"
-  show (Jump a) = "JMP " ++ show a
+  show Return = "RET"
+  show (Jump a) = "JP " ++ show a
+  show (Call a) = "CALL " ++ show a
 
 export
 opcode : (value : Bits16) -> Opcode
-opcode v =
-  let shift = intToBits 12 in
-  let mask = intToBits 0xf000 in
-  let opInt : Int = (cast v) in
-  let op: Bits 16 = intToBits (cast opInt) in
-  let family = (and op mask) `shiftRightLogical` shift in
-  case bitsToInt family of
+opcode op =
+  let family = extractNibble op 3 in
+  case family of
     0 => ClearScreen
     n => Jump (the Bits16 $ fromInteger n)
 
-  -- case v of
-  --   0x00e0 => ClearScreen
-  --   0x00ee => Return
-  --   n => Jump n
+opcodeFamily : (n : Int) -> (op : Bits16) -> Opcode
+opcodeFamily 0 op =
+  case op of
+    0x00e0 => ClearScreen
+    0x00ee => Return
+    _ => Invalid op
+opcodeFamily 1 op = Jump $ extractAddress op
+opcodeFamily 2 op = Call $ extractAddress op
