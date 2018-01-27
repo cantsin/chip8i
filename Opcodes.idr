@@ -25,8 +25,9 @@ extractSprite : (value : Bits16) -> Sprite
 extractSprite v = cast $ extractFourthNibble v
 
 Address : Type
-Address = Bits16 -- TODO 12 bit value
+Address = Bits16 -- really a 12 bit value
 
+-- always in position 0x0AAA
 extractAddress : (value : Bits16) -> Address
 extractAddress = extractMask0xfff
 
@@ -40,43 +41,37 @@ extractValue = extractSecondByte
 export
 data Opcode =
   Invalid Bits16
-  -- no parameter
   | ClearScreen
   | Return
-  -- address
   | Jump                   Address
   | Call                   Address
-  | LoadRegisterI          Address
-  | JumpRegister0          Address
-  -- register and value
   | SkipIfEq               Register Value
   | SkipIfNeq              Register Value
+  | SkipIfRegisterEq       Register Register
   | LoadRegister           Register Value
   | AddRegister            Register Value
-  | Random                 Register Value
-  -- register to register
-  | SkipIfRegisterEq       Register Register
-  | SkipIfRegisterNeq      Register Register
   | CopyRegister           Register Register
   | OrRegister             Register Register
   | AndRegister            Register Register
   | XorRegister            Register Register
   | AddRegisterCarry       Register Register
   | SubRegister            Register Register
-  | SubRegisterInverse     Register Register
   | ShiftRightRegister     Register Register
+  | SubRegisterInverse     Register Register
   | ShiftLeftRegister      Register Register
-  -- registers and value
+  | SkipIfRegisterNeq      Register Register
+  | LoadRegisterI          Address
+  | JumpRegister0          Address
+  | Random                 Register Value
   | Display                Register Register Sprite
-  -- register
   | SkipIfKeyPressed       Register
   | SkipIfKeyNotPressed    Register
-  | LoadRegisterWithSprite Register
   | LoadRegisterDelay      Register
   | WaitForKeyPress        Register
   | SetDelayFromRegister   Register
   | SetSoundFromRegister   Register
   | AddRegisterI           Register
+  | LoadRegisterWithSprite Register
   | StoreBCD               Register
   | DumpRegisters          Register
   | LoadRegisters          Register
@@ -122,39 +117,65 @@ Show Opcode where
   show (DumpRegisters r)          = "LD [I], " ++ show r
   show (LoadRegisters r)          = "LD "      ++ show r  ++ ", [I]"
 
-opcodeFamily : (n : Int) -> (op : Bits16) -> Opcode
-opcodeFamily 0 op =
+opcodeDispatch : (n : Int) -> (op : Bits16) -> Opcode
+opcodeDispatch 0 op =
   case op of
     0x00e0 => ClearScreen
     0x00ee => Return
     _ => Invalid op
-opcodeFamily 0x1 op = Jump (extractAddress op)
-opcodeFamily 0x2 op = Call (extractAddress op)
-opcodeFamily 0x3 op = SkipIfEq (extractFirstRegister op) (extractValue op)
-opcodeFamily 0x4 op = SkipIfNeq (extractFirstRegister op) (extractValue op)
-opcodeFamily 0x5 op =
+opcodeDispatch 0x1 op = Jump          (extractAddress op)
+opcodeDispatch 0x2 op = Call          (extractAddress op)
+opcodeDispatch 0x3 op = SkipIfEq      (extractFirstRegister op) (extractValue op)
+opcodeDispatch 0x4 op = SkipIfNeq     (extractFirstRegister op) (extractValue op)
+opcodeDispatch 0x5 op =
   case extractFourthNibble op of
-    0 => SkipIfRegisterEq (extractFirstRegister op) (extractSecondRegister op)
+    0x0 => SkipIfRegisterEq           (extractFirstRegister op) (extractSecondRegister op)
     _ => Invalid op
-opcodeFamily 0x6 op = LoadRegister (extractFirstRegister op) (extractValue op)
-opcodeFamily 0x7 op = AddRegister (extractFirstRegister op) (extractValue op)
--- opcodeFamily 0x8
-opcodeFamily 0x9 op =
+opcodeDispatch 0x6 op = LoadRegister  (extractFirstRegister op) (extractValue op)
+opcodeDispatch 0x7 op = AddRegister   (extractFirstRegister op) (extractValue op)
+opcodeDispatch 0x8 op =
   case extractFourthNibble op of
-    0 => SkipIfRegisterNeq (extractFirstRegister op) (extractSecondRegister op)
+    0x0 => CopyRegister               (extractFirstRegister op) (extractSecondRegister op)
+    0x1 => OrRegister                 (extractFirstRegister op) (extractSecondRegister op)
+    0x2 => AndRegister                (extractFirstRegister op) (extractSecondRegister op)
+    0x3 => XorRegister                (extractFirstRegister op) (extractSecondRegister op)
+    0x4 => AddRegisterCarry           (extractFirstRegister op) (extractSecondRegister op)
+    0x5 => SubRegister                (extractFirstRegister op) (extractSecondRegister op)
+    0x6 => ShiftRightRegister         (extractFirstRegister op) (extractSecondRegister op)
+    0x7 => SubRegisterInverse         (extractFirstRegister op) (extractSecondRegister op)
+    0xe => ShiftLeftRegister          (extractFirstRegister op) (extractSecondRegister op)
     _ => Invalid op
-opcodeFamily 0xa op = LoadRegisterI (extractAddress op)
-opcodeFamily 0xb op = JumpRegister0 (extractAddress op)
-opcodeFamily 0xc op = Random (extractFirstRegister op) (extractValue op)
-opcodeFamily 0xd op = Display (extractFirstRegister op) (extractSecondRegister op) (extractSprite op)
--- opcodeFamily 0xe
--- opcodeFamily 0xf
-opcodeFamily _ op = Invalid op
+opcodeDispatch 0x9 op =
+  case extractFourthNibble op of
+    0x0 => SkipIfRegisterNeq          (extractFirstRegister op) (extractSecondRegister op)
+    _ => Invalid op
+opcodeDispatch 0xa op = LoadRegisterI (extractAddress op)
+opcodeDispatch 0xb op = JumpRegister0 (extractAddress op)
+opcodeDispatch 0xc op = Random        (extractFirstRegister op) (extractValue op)
+opcodeDispatch 0xd op = Display       (extractFirstRegister op) (extractSecondRegister op) (extractSprite op)
+opcodeDispatch 0xe op =
+  case extractSecondByte op of
+    0x9e => SkipIfKeyPressed          (extractFirstRegister op)
+    0xa1 => SkipIfKeyNotPressed       (extractFirstRegister op)
+    _ => Invalid op
+opcodeDispatch 0xf op =
+  case extractSecondByte op of
+    0x07 => LoadRegisterDelay         (extractFirstRegister op)
+    0x0a => WaitForKeyPress           (extractFirstRegister op)
+    0x15 => SetDelayFromRegister      (extractFirstRegister op)
+    0x18 => SetSoundFromRegister      (extractFirstRegister op)
+    0x1e => AddRegisterI              (extractFirstRegister op)
+    0x29 => LoadRegisterWithSprite    (extractFirstRegister op)
+    0x33 => StoreBCD                  (extractFirstRegister op)
+    0x55 => DumpRegisters             (extractFirstRegister op)
+    0x65 => LoadRegisters             (extractFirstRegister op)
+    _ => Invalid op
+opcodeDispatch _ op = Invalid op
 
 opcode : (value : Bits16) -> Opcode
 opcode op =
   let family: Int = cast $ extractFirstNibble op in
-  opcodeFamily family op
+  opcodeDispatch family op
 
 -- opcode implementations
 
