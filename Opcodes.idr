@@ -155,11 +155,6 @@ clearScreen : (chip : Chip8) -> Chip8
 clearScreen c =
   ?clear
 
--- subroutineReturn : (chip : Chip8) -> Chip8
--- subroutineReturn c =
---   let newStack = (Stack c) ++ [PC c] in
---   record { SP $= (+ 1), Stack = newStack } c
-
 jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect = setPC
 
@@ -174,15 +169,21 @@ skipIfRegisterEqual c r v =
 loadRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
 loadRegisterDirect c r v = setRegister c (cast r) v
 
+addRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+addRegisterDirect c r v =
+  let reg: Fin 16 = cast r in
+  let currentValue = getRegister c reg in
+  setRegister c reg (currentValue + v)
+
 loadRegisterI : (chip : Chip8) -> (value : LargeValue) -> Chip8
 loadRegisterI = setRegisterI
 
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch c ClearScreen = pure $ clearScreen c
--- dispatch c Return = pure $ subroutineReturn c
 dispatch c (Jump addr) = pure $ jumpDirect c addr
 dispatch c (SkipIfEq r v) = pure $ skipIfRegisterEqual c r v
 dispatch c (LoadRegister r v) = pure $ loadRegisterDirect c r v
+dispatch c (AddRegister r v) = pure $ addRegisterDirect c r v
 dispatch c (LoadRegisterI r) = pure $ loadRegisterI c r
 dispatch c opcode =
   do

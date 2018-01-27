@@ -87,3 +87,8 @@ export
 setRegisterI : (chip : Chip8) -> (value : Bits16) -> Chip8
 setRegisterI c v =
   record { I = v } c
+
+-- pushStack : (chip : Chip8) -> Chip8
+-- pushStack c =
+--   let newStack = (Stack c) ++ [PC c] in
+--   record { SP $= (+ 1), Stack = newStack } c
