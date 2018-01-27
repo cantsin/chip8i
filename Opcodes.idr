@@ -9,11 +9,23 @@ import Utilities
 Register : Type
 Register = Fin 16
 
+-- always in position 0x0R00
+extractFirstRegister : (value : Bits16) -> Register
+extractFirstRegister v = cast $ extractSecondNibble v
+
+-- always in position 0x00R0
+extractSecondRegister : (value : Bits16) -> Register
+extractSecondRegister v = cast $ extractThirdNibble v
+
 Key : Type
-Key = Bits8 -- TODO 4 bit value
+Key = Fin 16
 
 Sprite : Type
-Sprite = Bits8 -- TODO 4 bit value
+Sprite = Fin 16
+
+-- always in position 0x000S
+extractSprite : (value : Bits16) -> Sprite
+extractSprite v = cast $ extractFourthNibble v
 
 Address : Type
 Address = Bits16 -- TODO 12 bit value
@@ -72,14 +84,6 @@ data Opcode =
 
 Show Register where
   show r = "V" ++ (show $ finToNat r)
-
--- always in position 0x0R00
-extractFirstRegister : (value : Bits16) -> Register
-extractFirstRegister v = cast $ extractSecondNibble v
-
--- always in position 0x00R0
-extractSecondRegister : (value : Bits16) -> Register
-extractSecondRegister v = cast $ extractThirdNibble v
 
 export
 Show Opcode where
@@ -144,7 +148,7 @@ opcodeFamily 0x7 op = AddRegister (extractFirstRegister op) (extractSecondByte o
 opcodeFamily 0xa op = LoadRegisterI (extractAddress op)
 -- opcodeFamily 0xb
 opcodeFamily 0xc op = Random (extractFirstRegister op) (extractSecondByte op)
-opcodeFamily 0xd op = Display (extractFirstRegister op) (extractSecondRegister op) (extractFourthNibble op)
+opcodeFamily 0xd op = Display (extractFirstRegister op) (extractSecondRegister op) (extractSprite op)
 -- opcodeFamily 0xe
 -- opcodeFamily 0xf
 opcodeFamily _ op = Invalid op
