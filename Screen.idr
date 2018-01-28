@@ -1,8 +1,12 @@
 module Screen
 
-import Constants
+import Data.Buffer
+import Data.Vect
 
--- each bit represents a pixel
+import Constants
+import Utilities
+
+-- a bit represents a monochrome pixel
 data Pixel =
   On
   | Off
@@ -11,12 +15,16 @@ xorOnePixel : (p1 : Pixel) -> (p2 : Pixel) -> Pixel
 xorOnePixel On Off = On
 xorOnePixel Off On = On
 xorOnePixel _ _ = Off
--- if any bit erased, VF is set to 1; if not, 0
 
--- 64x32 pixel monochrome display
+-- track if any pixel was erased (so we can set VF in the CPU)
+pixelWasErased : (p1 : Pixel) -> (p2 : Pixel) -> Bool
+pixelWasErased On Off = True
+pixelWasErased _ _ = False
+
+-- 64x32 monochrome pixel display
 
 
-
+partial
 writePixelToScreen : (s : ?screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> IO ?screen
 writePixelToScreen s p x y =
   let realX = x `mod` ScreenWidth in
@@ -30,12 +38,29 @@ writePixelToScreen s p x y =
 -- sprites may be up to 15 bytes (8x15)
 -- Sprite : Type
 -- Sprite = List Bits8
+Sprite : Type
+Sprite = Vect 16 Bits8
+
+loadSprite : (b : Buffer) -> Sprite
+loadSprite = ?loadSprite
 
 writeSpriteToScreen : (s : ?screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> IO ?screen
 writeSpriteToScreen = ?writeSpriteToScreen
--- ignore empty sprite
+  -- ignore empty sprite
 
--- store at 0x000 to 0x1ff
+-- the address where we will store sprite data. this address is
+-- arbitrarily chosen, but must fit in the range 0x000 to 0x1fff.
+spriteDataAddress : Int
+spriteDataAddress = 0x100
+
+spriteDataLength : Int
+spriteDataLength = 5
+
+spriteStartingAddress : Fin 16 -> Bits16
+spriteStartingAddress x =
+  let spriteOffset = cast $ finToNat x in
+  let offsetAddress = spriteDataLength * spriteOffset in
+  cast $ spriteDataAddress + offsetAddress
 
 sprite0x0 : List Bits8
 sprite0x0 = [0xf0, 0x90, 0x90, 0x90, 0xf0]
