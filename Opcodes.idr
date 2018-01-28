@@ -2,6 +2,10 @@ module Opcodes
 
 import Data.Bits
 import Data.Fin
+import Effects
+import Effect.StdIO
+import Effect.Random
+import Effect.State
 
 import Chip8
 import Utilities
@@ -203,6 +207,12 @@ addRegisterDirect c r v =
   let value = getRegister c r in
   setRegister c r (value + v)
 
+andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+andRandomValue c r v =
+  -- let value: Bits 16 = 0x1 in -- getRandomByte in
+  -- let mask = value `and` intToBits v in
+  setRegister c r 0x1 --(cast mask)
+
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch c ClearScreen = pure $ clearScreen c
 dispatch c (Jump addr) = pure $ jumpDirect c addr
@@ -210,6 +220,7 @@ dispatch c (SkipIfEq r v) = pure $ skipIfRegisterEqual c r v
 dispatch c (LoadRegister r v) = pure $ setRegister c r v
 dispatch c (AddRegister r v) = pure $ addRegisterDirect c r v
 dispatch c (LoadRegisterI r) = pure $ setRegisterI c r
+dispatch c (Random r v) = pure $ andRandomValue c r v
 dispatch c opcode =
   do
     putStrLn "(unhandled)"

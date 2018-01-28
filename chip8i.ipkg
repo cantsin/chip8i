@@ -1,3 +1,5 @@
 package chip8i
 
 modules = Main
+
+opts = "-p effects"
