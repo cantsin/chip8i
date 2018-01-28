@@ -8,9 +8,7 @@ import Constants
 import Utilities
 
 -- a bit represents a monochrome pixel
-data Pixel =
-  On
-  | Off
+data Pixel = On | Off
 
 xorOnePixel : (p1 : Pixel) -> (p2 : Pixel) -> Pixel
 xorOnePixel On Off = On
@@ -22,31 +20,54 @@ pixelWasErased : (p1 : Pixel) -> (p2 : Pixel) -> Bool
 pixelWasErased On Off = True
 pixelWasErased _ _ = False
 
+-- for convenience
+Width : Nat
+Width = cast ScreenWidth
+
+Height : Nat
+Height = cast ScreenHeight
+
+-- 64x32 monochrome pixel display
+record Screen where
+  constructor MkScreen
+  Picture: Vect Width (Vect Height Pixel)
+  WasErased : Bool -- track for VF
+
+readPixelFromScreen : (s : Screen) -> (x : Fin Width) -> (y : Fin Height) -> Pixel
+readPixelFromScreen s x y =
+  Vect.index y $ Vect.index x $ Picture s
+
+partial
+writePixelToScreen : (s : Screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> IO Screen
+writePixelToScreen s p x y =
+  let adjustedX : Integer = cast $ x `mod` ScreenWidth in
+  let adjustedY : Integer = cast $ y `mod` ScreenHeight in
+  let realX = integerToFin adjustedX Width in
+  let realY = integerToFin adjustedY Height in
+  -- we know the pixels are in bounds because they are modulo the
+  -- screen size. but...
+  case (realX, realY) of
+    (Just x, Just y) =>
+      let pixel = readPixelFromScreen s x y in
+      let newPixel = xorOnePixel pixel p in
+      let wasErased = pixelWasErased pixel p in
+      -- check for VF? (need to "or" this)
+      -- write pixel
+      ?writePixelToScreen
+    _ =>
+      idris_crash "could not write pixel to screen"
+
 -- {len: Nat} -> (Fin len) -> {auto p: len < 16 = True} -> Vect len Bits8
 
 -- a sprite may be up to 8x15 pixels
 -- data Sprite : Vect Nat Bits8 -> Type where
 --   MkSprite : (len : Nat) -> {auto p: len < 16 = True} -> Sprite (Vect len Bits8)
 
--- 64x32 monochrome pixel display
-
-
-partial
-writePixelToScreen : (s : ?screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> IO ?screen
-writePixelToScreen s p x y =
-  let realX = x `mod` ScreenWidth in
-  let realY = y `mod` ScreenHeight in
-  -- get pixel from screen
-  -- xor
-  -- check for VF?
-  -- write
-  ?writePixelToScreen
-
 -- load a sprite from RAM
 -- createSprite : (b : Buffer) -> Sprite
 -- createSprite = ?loadSprite
 
-writeSpriteToScreen : (s : ?screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> IO ?screen
+writeSpriteToScreen : (s : Screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> IO Screen
 writeSpriteToScreen = ?writeSpriteToScreen
   -- ignore empty sprite
 
