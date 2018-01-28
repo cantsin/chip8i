@@ -8,6 +8,7 @@ import Effect.Random
 import Effect.State
 
 import Chip8
+import Screen
 import Opcodes
 import Constants
 
