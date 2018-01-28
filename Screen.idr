@@ -30,16 +30,22 @@ Height = cast ScreenHeight
 -- 64x32 monochrome pixel display
 record Screen where
   constructor MkScreen
-  Picture: Vect Width (Vect Height Pixel)
+  Picture : Vect Width (Vect Height Pixel)
   WasErased : Bool -- track for VF
 
 readPixelFromPicture : (s : Screen) -> (x : Fin Width) -> (y : Fin Height) -> Pixel
 readPixelFromPicture s x y =
-  Vect.index y $ Vect.index x $ Picture s
+  let picture = Picture s in
+  let column = Vect.index x picture in
+  Vect.index y column
 
 writePixelToPicture : (s : Screen) -> (p : Pixel) -> (x : Fin Width) -> (y : Fin Height) -> Screen
 writePixelToPicture s p x y =
-  ?updateScreenPixel
+  let picture = Picture s in
+  let column = Vect.index x picture in
+  let newColumn = replaceAt y p column in
+  let newPicture = replaceAt x newColumn picture in
+  record { Picture = newPicture } s
 
 writePixelToScreen : (s : Screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> Screen
 writePixelToScreen s p x y =
