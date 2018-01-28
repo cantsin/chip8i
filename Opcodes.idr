@@ -21,12 +21,12 @@ extractFirstRegister v = cast $ extractSecondNibble v
 extractSecondRegister : (value : Bits16) -> Register
 extractSecondRegister v = cast $ extractThirdNibble v
 
-Sprite : Type
-Sprite = Fin 16
+SpriteIndex : Type
+SpriteIndex = Fin 16
 
 -- always in position 0x000S
-extractSprite : (value : Bits16) -> Sprite
-extractSprite v = cast $ extractFourthNibble v
+extractSpriteIndex : (value : Bits16) -> SpriteIndex
+extractSpriteIndex v = cast $ extractFourthNibble v
 
 Address : Type
 Address = Bits16 -- really a 12 bit value
@@ -67,7 +67,7 @@ data Opcode =
   | LoadRegisterI          Address
   | JumpRegister0          Address
   | Random                 Register Value
-  | Display                Register Register Sprite
+  | Display                Register Register SpriteIndex
   | SkipIfKeyPressed       Register
   | SkipIfKeyNotPressed    Register
   | LoadRegisterDelay      Register
@@ -156,7 +156,7 @@ opcodeDispatch 0x9 op =
 opcodeDispatch 0xa op = LoadRegisterI (extractAddress op)
 opcodeDispatch 0xb op = JumpRegister0 (extractAddress op)
 opcodeDispatch 0xc op = Random        (extractFirstRegister op) (extractValue op)
-opcodeDispatch 0xd op = Display       (extractFirstRegister op) (extractSecondRegister op) (extractSprite op)
+opcodeDispatch 0xd op = Display       (extractFirstRegister op) (extractSecondRegister op) (extractSpriteIndex op)
 opcodeDispatch 0xe op =
   case extractSecondByte op of
     0x9e => SkipIfKeyPressed          (extractFirstRegister op)

@@ -1,8 +1,8 @@
 module Chip8
 
 import System
-import Data.Vect
 import Data.Buffer
+import Data.Vect
 
 import Utilities
 import Constants

@@ -14,6 +14,11 @@ import Constants
 
 %default total
 
+-- chip: Chip8
+-- screen: Screen
+-- randomN: next random integer
+-- keys: key presses
+
 readROMFromFile : (filename : String) -> IO Buffer
 readROMFromFile filename =
   let maxLength : Int = RamSize - StartingAddress in
