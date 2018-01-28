@@ -21,12 +21,12 @@ extractFirstRegister v = cast $ extractSecondNibble v
 extractSecondRegister : (value : Bits16) -> Register
 extractSecondRegister v = cast $ extractThirdNibble v
 
-SpriteIndex : Type
-SpriteIndex = Fin 16
+SpriteLength : Type
+SpriteLength = Fin 16
 
 -- always in position 0x000S
-extractSpriteIndex : (value : Bits16) -> SpriteIndex
-extractSpriteIndex v = cast $ extractFourthNibble v
+extractSpriteLength : (value : Bits16) -> SpriteLength
+extractSpriteLength v = cast $ extractFourthNibble v
 
 Address : Type
 Address = Bits16 -- really a 12 bit value
@@ -67,7 +67,7 @@ data Opcode =
   | LoadRegisterI          Address
   | JumpRegister0          Address
   | Random                 Register Value
-  | Display                Register Register SpriteIndex
+  | Display                Register Register SpriteLength
   | SkipIfKeyPressed       Register
   | SkipIfKeyNotPressed    Register
   | LoadRegisterDelay      Register
@@ -108,7 +108,7 @@ Show Opcode where
   show (LoadRegisterI a)          = "LD I, "   ++ show a
   show (JumpRegister0 a)          = "JP V0, "  ++ show a
   show (Random r v)               = "RND "     ++ show r  ++ ", " ++ show v
-  show (Display r1 r2 s)          = "DRW "     ++ show r1 ++ ", " ++ show r2 ++ ", S" ++ show (finToNat s)
+  show (Display r1 r2 s)          = "DRW "     ++ show r1 ++ ", " ++ show r2 ++ ", I[" ++ show (finToNat s) ++ "]"
   show (SkipIfKeyPressed r)       = "SKP "     ++ show r
   show (SkipIfKeyNotPressed r)    = "SKNP "    ++ show r
   show (LoadRegisterDelay r)      = "LD "      ++ show r  ++ ", DT"
@@ -156,7 +156,7 @@ opcodeDispatch 0x9 op =
 opcodeDispatch 0xa op = LoadRegisterI (extractAddress op)
 opcodeDispatch 0xb op = JumpRegister0 (extractAddress op)
 opcodeDispatch 0xc op = Random        (extractFirstRegister op) (extractValue op)
-opcodeDispatch 0xd op = Display       (extractFirstRegister op) (extractSecondRegister op) (extractSpriteIndex op)
+opcodeDispatch 0xd op = Display       (extractFirstRegister op) (extractSecondRegister op) (extractSpriteLength op)
 opcodeDispatch 0xe op =
   case extractSecondByte op of
     0x9e => SkipIfKeyPressed          (extractFirstRegister op)

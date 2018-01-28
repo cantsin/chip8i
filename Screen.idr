@@ -1,5 +1,6 @@
 module Screen
 
+import System
 import Data.Bits
 import Data.Buffer
 import Data.Vect
@@ -72,30 +73,34 @@ writePixelToScreen s p x y =
 --   MkSprite : (len : Nat) -> {auto p: len < 16 = True} -> Sprite (Vect len Bits8)
 
 -- load a sprite from RAM
--- createSprite : (b : Buffer) -> Sprite
--- createSprite = ?loadSprite
+loadSpriteFromMemory : (ram : Buffer) -> (address : Bits16) -> ?sprite
+loadSpriteFromMemory = ?loadSpriteFromMemory
 
-writeSpriteToScreen : (s : Screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> IO Screen
+writeSpriteToScreen : (s : Screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteToScreen = ?writeSpriteToScreen
   -- ignore empty sprite
-
--- we store default sprites in the interpreter space. this address is
--- arbitrarily chosen, but must fit in the range 0x000 to 0x1fff.
-
-defaultSpriteDataAddress : Int
-defaultSpriteDataAddress = 0x100
-
-defaultSpriteDataLength : Int
-defaultSpriteDataLength = 5
 
 defaultSpriteStartingAddress : Fin 16 -> Bits16
 defaultSpriteStartingAddress x =
   let spriteOffset = cast $ finToNat x in
-  let offsetAddress = defaultSpriteDataLength * spriteOffset in
-  cast $ defaultSpriteDataAddress + offsetAddress
+  let offsetAddress = DefaultSpriteDataLength * spriteOffset in
+  cast $ DefaultSpriteDataAddress + offsetAddress
 
 -- load into interpreter space
-copyOverDefaultSpriteData : ?copyOverDefaultSpriteData
+copyOverDefaultSpriteData : (ram : Buffer) -> IO ()
+copyOverDefaultSpriteData ram =
+  do
+    buf <- Buffer.newBuffer (DefaultSpriteDataLength * 0xf)
+    case buf of
+      Just emptyData =>
+        ?copyOverDefaultSpriteData
+      Nothing =>
+        do
+          putStrLn "Not enough memory"
+          System.exitFailure
+
+-- make a hard coded bunch
+-- defaultSpriteData
 
 defaultSprite0x0 : Vect 5 Bits8
 defaultSprite0x0 = fromList [0xf0, 0x90, 0x90, 0x90, 0xf0]
