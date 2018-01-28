@@ -33,12 +33,15 @@ record Screen where
   Picture: Vect Width (Vect Height Pixel)
   WasErased : Bool -- track for VF
 
-readPixelFromScreen : (s : Screen) -> (x : Fin Width) -> (y : Fin Height) -> Pixel
-readPixelFromScreen s x y =
+readPixelFromPicture : (s : Screen) -> (x : Fin Width) -> (y : Fin Height) -> Pixel
+readPixelFromPicture s x y =
   Vect.index y $ Vect.index x $ Picture s
 
-partial
-writePixelToScreen : (s : Screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> IO Screen
+writePixelToPicture : (s : Screen) -> (p : Pixel) -> (x : Fin Width) -> (y : Fin Height) -> Screen
+writePixelToPicture s p x y =
+  ?updateScreenPixel
+
+writePixelToScreen : (s : Screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> Screen
 writePixelToScreen s p x y =
   let adjustedX : Integer = cast $ x `mod` ScreenWidth in
   let adjustedY : Integer = cast $ y `mod` ScreenHeight in
@@ -48,12 +51,11 @@ writePixelToScreen s p x y =
   -- screen size. but...
   case (realX, realY) of
     (Just x, Just y) =>
-      let pixel = readPixelFromScreen s x y in
+      let pixel = readPixelFromPicture s x y in
       let newPixel = xorOnePixel pixel p in
-      let wasErased = pixelWasErased pixel p in
-      -- check for VF? (need to "or" this)
-      -- write pixel
-      ?writePixelToScreen
+      let newScreen = writePixelToPicture s newPixel x y in
+      let wasErased = pixelWasErased pixel p || WasErased s in
+      record { WasErased = wasErased } newScreen
     _ =>
       idris_crash "could not write pixel to screen"
 
