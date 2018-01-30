@@ -213,18 +213,47 @@ andRandomValue c r v =
   -- let mask = value `and` intToBits v in
   setRegister c r 0x1 --(cast mask)
 
-dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
-dispatch c ClearScreen = pure $ clearScreen c
-dispatch c (Jump addr) = pure $ jumpDirect c addr
-dispatch c (SkipIfEq r v) = pure $ skipIfRegisterEqual c r v
-dispatch c (LoadRegister r v) = pure $ setRegister c r v
-dispatch c (AddRegister r v) = pure $ addRegisterDirect c r v
-dispatch c (LoadRegisterI r) = pure $ setRegisterI c r
-dispatch c (Random r v) = pure $ andRandomValue c r v
-dispatch c opcode =
+unhandledOpcode : (chip : Chip8) -> IO Chip8
+unhandledOpcode c =
   do
     putStrLn "(unhandled)"
     pure c
+
+dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
+dispatch c ClearScreen                = pure $ clearScreen c
+dispatch c Return                     = pure $ popStack c
+dispatch c (Jump addr)                = pure $ jumpDirect c addr
+dispatch c (Call addr)                = pure $ pushStack c
+dispatch c (SkipIfEq r v)             = pure $ skipIfRegisterEqual c r v
+dispatch c (SkipIfNeq r v)            = unhandledOpcode c
+dispatch c (SkipIfRegisterEq r1 r2)   = unhandledOpcode c
+dispatch c (LoadRegister r v)         = pure $ setRegister c r v
+dispatch c (AddRegister r v)          = pure $ addRegisterDirect c r v
+dispatch c (CopyRegister r1 r2)       = unhandledOpcode c
+dispatch c (OrRegister r1 r2)         = unhandledOpcode c
+dispatch c (AndRegister r1 r2)        = unhandledOpcode c
+dispatch c (XorRegister r1 r2)        = unhandledOpcode c
+dispatch c (AddRegisterCarry r1 r2)   = unhandledOpcode c
+dispatch c (SubRegister r1 r2)        = unhandledOpcode c
+dispatch c (ShiftRightRegister r1 r2) = unhandledOpcode c
+dispatch c (SubRegisterInverse r1 r2) = unhandledOpcode c
+dispatch c (ShiftLeftRegister r1 r2)  = unhandledOpcode c
+dispatch c (SkipIfRegisterNeq r1 r2)  = unhandledOpcode c
+dispatch c (LoadRegisterI r)          = pure $ setRegisterI c r
+dispatch c (JumpRegister0 addr)       = unhandledOpcode c
+dispatch c (Random r v)               = pure $ andRandomValue c r v
+dispatch c (Display r1 r2 s)          = unhandledOpcode c
+dispatch c (SkipIfKeyPressed r)       = unhandledOpcode c
+dispatch c (SkipIfKeyNotPressed r)    = unhandledOpcode c
+dispatch c (LoadRegisterDelay r)      = unhandledOpcode c
+dispatch c (WaitForKeyPress r)        = unhandledOpcode c
+dispatch c (SetDelayFromRegister r)   = unhandledOpcode c
+dispatch c (SetSoundFromRegister r)   = unhandledOpcode c
+dispatch c (AddRegisterI r)           = unhandledOpcode c
+dispatch c (LoadRegisterWithSprite r) = unhandledOpcode c
+dispatch c (StoreBCD r)               = unhandledOpcode c
+dispatch c (DumpRegisters r)          = unhandledOpcode c
+dispatch c (LoadRegisters r)          = unhandledOpcode c
 
 export
 partial
