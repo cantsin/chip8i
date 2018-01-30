@@ -202,16 +202,103 @@ skipIfRegisterEqual c r v =
   else
     c
 
+skipIfRegisterNotEqual : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+skipIfRegisterNotEqual c r v =
+  let toCompare = getRegister c r in
+  if v /= toCompare then
+    incrementPC c
+  else
+    c
+
+skipIfRegistersEqual : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+skipIfRegistersEqual c r1 r2 =
+  let v1 = getRegister c r1 in
+  let v2 = getRegister c r2 in
+  if v1 == v2 then
+    incrementPC c
+  else
+    c
+
+copyRegisters : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+copyRegisters c r1 r2 =
+  let value = getRegister c r2 in
+  setRegister c r1 value
+
+orRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+orRegister c r1 r2 =
+  let v1 = cast $ getRegister c r1 in
+  let v2 = cast $ getRegister c r2 in
+  let result = cast $ bitsToInt (v1 `or` v2) in
+  setRegister c r1 result
+
+andRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+andRegister c r1 r2 =
+  let v1 = cast $ getRegister c r1 in
+  let v2 = cast $ getRegister c r2 in
+  let result = cast $ bitsToInt (v1 `and` v2) in
+  setRegister c r1 result
+
+xorRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+xorRegister c r1 r2 =
+  let v1 = cast $ getRegister c r1 in
+  let v2 = cast $ getRegister c r2 in
+  let result = cast $ bitsToInt (v1 `xor` v2) in
+  setRegister c r1 result
+
+-- AddRegisterCarry
+
+-- subRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+-- subRegister c r1 r2 =
+--   let v1 = getRegister c r1 in
+--   let v2 = getRegister c r2 in
+--   let newChip = setRegister c r1 (v2 - v1) in
+--   if v1 > v2 then
+--     setRegister newChip 0xf 1
+--   else
+--     setRegister newChip 0xf 0
+
+-- ShiftRightRegister
+-- SubRegisterInverse
+-- ShiftLeftRegister
+
+skipIfRegistersNotEqual : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+skipIfRegistersNotEqual c r1 r2 =
+  let v1 = getRegister c r1 in
+  let v2 = getRegister c r2 in
+  if v1 /= v2 then
+    incrementPC c
+  else
+    c
+
 addRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
 addRegisterDirect c r v =
   let value = getRegister c r in
   setRegister c r (value + v)
+
+jumpRegister0 : (chip : Chip8) -> (address : Address) -> Chip8
+jumpRegister0 c addr =
+  let value : Bits16 = cast $ getRegister c 0 in
+  let newAddress = addr + value in
+  jumpDirect c newAddress
 
 andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
 andRandomValue c r v =
   -- let value: Bits 16 = 0x1 in -- getRandomByte in
   -- let mask = value `and` intToBits v in
   setRegister c r 0x1 --(cast mask)
+
+-- Display
+-- SkipIfKeyPressed
+-- SkipIfKeyNotPressed
+-- LoadRegisterDelay
+-- WaitForKeyPress
+-- SetDelayFromRegister
+-- SetSoundFromRegister
+-- AddRegisterI
+-- LoadRegisterWithSprite
+-- StoreBCD
+-- DumpRegisters
+-- LoadRegisters
 
 unhandledOpcode : (chip : Chip8) -> IO Chip8
 unhandledOpcode c =
@@ -225,22 +312,22 @@ dispatch c Return                     = pure $ popStack c
 dispatch c (Jump addr)                = pure $ jumpDirect c addr
 dispatch c (Call addr)                = pure $ pushStack c
 dispatch c (SkipIfEq r v)             = pure $ skipIfRegisterEqual c r v
-dispatch c (SkipIfNeq r v)            = unhandledOpcode c
-dispatch c (SkipIfRegisterEq r1 r2)   = unhandledOpcode c
+dispatch c (SkipIfNeq r v)            = pure $ skipIfRegisterNotEqual c r v
+dispatch c (SkipIfRegisterEq r1 r2)   = pure $ skipIfRegistersEqual c r1 r2
 dispatch c (LoadRegister r v)         = pure $ setRegister c r v
 dispatch c (AddRegister r v)          = pure $ addRegisterDirect c r v
-dispatch c (CopyRegister r1 r2)       = unhandledOpcode c
-dispatch c (OrRegister r1 r2)         = unhandledOpcode c
-dispatch c (AndRegister r1 r2)        = unhandledOpcode c
-dispatch c (XorRegister r1 r2)        = unhandledOpcode c
+dispatch c (CopyRegister r1 r2)       = pure $ copyRegisters c r1 r2
+dispatch c (OrRegister r1 r2)         = pure $ orRegister c r1 r2
+dispatch c (AndRegister r1 r2)        = pure $ andRegister c r1 r2
+dispatch c (XorRegister r1 r2)        = pure $ xorRegister c r1 r2
 dispatch c (AddRegisterCarry r1 r2)   = unhandledOpcode c
 dispatch c (SubRegister r1 r2)        = unhandledOpcode c
 dispatch c (ShiftRightRegister r1 r2) = unhandledOpcode c
 dispatch c (SubRegisterInverse r1 r2) = unhandledOpcode c
 dispatch c (ShiftLeftRegister r1 r2)  = unhandledOpcode c
-dispatch c (SkipIfRegisterNeq r1 r2)  = unhandledOpcode c
+dispatch c (SkipIfRegisterNeq r1 r2)  = pure $ skipIfRegistersNotEqual c r1 r2
 dispatch c (LoadRegisterI r)          = pure $ setRegisterI c r
-dispatch c (JumpRegister0 addr)       = unhandledOpcode c
+dispatch c (JumpRegister0 addr)       = pure $ jumpRegister0 c addr
 dispatch c (Random r v)               = pure $ andRandomValue c r v
 dispatch c (Display r1 r2 s)          = unhandledOpcode c
 dispatch c (SkipIfKeyPressed r)       = unhandledOpcode c
@@ -262,7 +349,7 @@ runCPU c =
   do
     op <- getOpcode c
     instruction <- pure $ opcode op
-    putStrLn $ (show c) ++ " => " ++ (show instruction)
+    -- putStrLn $ (show c) ++ " => " ++ (show instruction)
     case instruction of
       Invalid _ =>
         do
