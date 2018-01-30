@@ -19,7 +19,7 @@ record Chip8 where
   -- stack is an array of 16 16-bit values
   Stack : Vect 16 Bits16
   -- pseudo SP
-  SP : Bits8
+  SP : Fin 16
   -- 4kb RAM: 0x000 to 0x1ff are reserved, start instruction at 0x200
   Ram : Buffer
   -- delay time register DT
@@ -92,7 +92,24 @@ setRegisterI : (chip : Chip8) -> (value : Bits16) -> Chip8
 setRegisterI c v =
   record { I = v } c
 
--- pushStack : (chip : Chip8) -> Chip8
--- pushStack c =
---   let newStack = (Stack c) ++ [PC c] in
---   record { SP $= (+ 1), Stack = newStack } c
+export
+pushStack : (chip : Chip8) -> Chip8
+pushStack c =
+  let index = SP c in
+  case toIntegerNat $ finToNat index of
+    15 => idris_crash "Chip8: tried to push to full stack"
+    n =>
+      let newIndex = restrict 15 (n + 1) in
+      let newStack = replaceAt newIndex (PC c) (Stack c) in
+      record { SP = newIndex, Stack = newStack } c
+
+export
+popStack : (chip : Chip8) -> Chip8
+popStack c =
+  let index = SP c in
+  case index of
+    FZ => idris_crash "Chip8: tried to pop from empty stack"
+    FS n =>
+      let newIndex = restrict 15 $ cast n in
+      let newStack = replaceAt index 0 (Stack c) in
+      record { SP = newIndex, Stack = newStack } c
