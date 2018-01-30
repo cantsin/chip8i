@@ -101,7 +101,3 @@ partial
 getRandomByte : () -> Eff Integer [RND]
 getRandomByte () =
   rndInt 0x00 0xff
-
-export
-moduloFin : (value : Int) -> (cap : Nat) -> Fin cap
-moduloFin = ?test

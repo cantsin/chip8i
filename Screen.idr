@@ -22,25 +22,25 @@ pixelWasErased On Off = True
 pixelWasErased _ _ = False
 
 -- for convenience
-Width : Nat
-Width = cast ScreenWidth
+ScreenWidth : Nat
+ScreenWidth = 64
 
-Height : Nat
-Height = cast ScreenHeight
+ScreenHeight : Nat
+ScreenHeight = 32
 
 -- 64x32 monochrome pixel display
 record Screen where
   constructor MkScreen
-  Picture : Vect Width (Vect Height Pixel)
+  Picture : Vect ScreenWidth (Vect ScreenHeight Pixel)
   WasErased : Bool -- track for VF
 
-readPixelFromPicture : (s : Screen) -> (x : Fin Width) -> (y : Fin Height) -> Pixel
+readPixelFromPicture : (s : Screen) -> (x : Fin ScreenWidth) -> (y : Fin ScreenHeight) -> Pixel
 readPixelFromPicture s x y =
   let picture = Picture s in
   let column = Vect.index x picture in
   Vect.index y column
 
-writePixelToPicture : (s : Screen) -> (p : Pixel) -> (x : Fin Width) -> (y : Fin Height) -> Screen
+writePixelToPicture : (s : Screen) -> (p : Pixel) -> (x : Fin ScreenWidth) -> (y : Fin ScreenHeight) -> Screen
 writePixelToPicture s p x y =
   let picture = Picture s in
   let column = Vect.index x picture in
@@ -50,21 +50,13 @@ writePixelToPicture s p x y =
 
 writePixelToScreen : (s : Screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> Screen
 writePixelToScreen s p x y =
-  let adjustedX : Integer = cast $ x `mod` ScreenWidth in
-  let adjustedY : Integer = cast $ y `mod` ScreenHeight in
-  let realX = integerToFin adjustedX Width in
-  let realY = integerToFin adjustedY Height in
-  -- TODO we know the pixels are in bounds because they are modulo the
-  -- screen size. prove this.
-  case (realX, realY) of
-    (Just x, Just y) =>
-      let pixel = readPixelFromPicture s x y in
-      let newPixel = xorOnePixel pixel p in
-      let newScreen = writePixelToPicture s newPixel x y in
-      let wasErased = pixelWasErased pixel p || WasErased s in
-      record { WasErased = wasErased } newScreen
-    _ =>
-      idris_crash "could not write pixel to screen"
+  let realX = restrict (pred ScreenWidth) $ cast x in
+  let realY = restrict (pred ScreenHeight) $ cast y in
+  let pixel = readPixelFromPicture s realX realY in
+  let newPixel = xorOnePixel pixel p in
+  let newScreen = writePixelToPicture s newPixel realX realY in
+  let wasErased = pixelWasErased pixel p || WasErased s in
+  record { WasErased = wasErased } newScreen
 
 -- {len: Nat} -> (Fin len) -> {auto p: len < 16 = True} -> Vect len Bits8
 
