@@ -101,9 +101,9 @@ Show Opcode where
   show (XorRegister r1 r2)        = "XOR"      ++ show r1 ++ ", " ++ show r2
   show (AddRegisterCarry r1 r2)   = "ADD "     ++ show r1 ++ ", " ++ show r2
   show (SubRegister r1 r2)        = "SUB "     ++ show r1 ++ ", " ++ show r2
-  show (ShiftRightRegister r1 r2) = "SHR "     ++ show r1 ++ ", " ++ show r2
+  show (ShiftRightRegister r1 r2) = "SHR "     ++ show r1
   show (SubRegisterInverse r1 r2) = "SUBN "    ++ show r1 ++ ", " ++ show r2
-  show (ShiftLeftRegister r1 r2)  = "SHL "     ++ show r1 ++ ", " ++ show r2
+  show (ShiftLeftRegister r1 r2)  = "SHL "     ++ show r1
   show (SkipIfRegisterNeq r1 r2)  = "SNE "     ++ show r1 ++ ", " ++ show r2
   show (LoadRegisterI a)          = "LD I, "   ++ show a
   show (JumpRegister0 a)          = "JP V0, "  ++ show a
@@ -245,21 +245,45 @@ xorRegister c r1 r2 =
   let result = cast $ bitsToInt (v1 `xor` v2) in
   setRegister c r1 result
 
--- AddRegisterCarry
+addRegisterCarry : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+addRegisterCarry c r1 r2 =
+  ?addregistercarry
 
--- subRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
--- subRegister c r1 r2 =
---   let v1 = getRegister c r1 in
---   let v2 = getRegister c r2 in
---   let newChip = setRegister c r1 (v2 - v1) in
---   if v1 > v2 then
---     setRegister newChip 0xf 1
---   else
---     setRegister newChip 0xf 0
+subtractRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+subtractRegister c r1 r2 =
+  let v1 : Int = cast $ getRegister c r1 in
+  let v2 : Int = cast $ getRegister c r2 in
+  let result = cast (v1 - v2) in
+  let flag = if v1 > v2 then 1 else 0 in
+  let newChip = setRegister c r1 result in
+  setRegisterFlag newChip flag
 
--- ShiftRightRegister
--- SubRegisterInverse
--- ShiftLeftRegister
+shiftRightRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+shiftRightRegister c r _ =
+  let v = cast $ getRegister c r in
+  let one = intToBits 0x1 in
+  let result = cast $ bitsToInt (v `shiftRightLogical` one) in
+  let flag = cast $ bitsToInt (v `and` one) in
+  let newChip = setRegister c r result in
+  setRegisterFlag newChip flag
+
+subtractRegisterInverse : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+subtractRegisterInverse c r1 r2 =
+  let v1 : Int = cast $ getRegister c r1 in
+  let v2 : Int = cast $ getRegister c r2 in
+  let result = cast (v2 - v1) in
+  let flag = if v2 > v1 then 1 else 0 in
+  let newChip = setRegister c r1 result in
+  setRegisterFlag newChip flag
+
+shiftLeftRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+shiftLeftRegister c r _ =
+  let v = getRegister c r in
+  let one = intToBits 0x1 in
+  let result = cast $ bitsToInt ((cast v) `shiftLeft` one) in
+  let flag = if v > 0x7f then 1 else 0 in
+  let newChip = setRegister c r result in
+  setRegisterFlag newChip flag
 
 skipIfRegistersNotEqual : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
 skipIfRegistersNotEqual c r1 r2 =
@@ -320,11 +344,11 @@ dispatch c (CopyRegister r1 r2)       = pure $ copyRegisters c r1 r2
 dispatch c (OrRegister r1 r2)         = pure $ orRegister c r1 r2
 dispatch c (AndRegister r1 r2)        = pure $ andRegister c r1 r2
 dispatch c (XorRegister r1 r2)        = pure $ xorRegister c r1 r2
-dispatch c (AddRegisterCarry r1 r2)   = unhandledOpcode c
-dispatch c (SubRegister r1 r2)        = unhandledOpcode c
-dispatch c (ShiftRightRegister r1 r2) = unhandledOpcode c
-dispatch c (SubRegisterInverse r1 r2) = unhandledOpcode c
-dispatch c (ShiftLeftRegister r1 r2)  = unhandledOpcode c
+dispatch c (AddRegisterCarry r1 r2)   = pure $ addRegisterCarry c r1 r2
+dispatch c (SubRegister r1 r2)        = pure $ subtractRegister c r1 r2
+dispatch c (ShiftRightRegister r1 r2) = pure $ shiftRightRegister c r1 r2
+dispatch c (SubRegisterInverse r1 r2) = pure $ subtractRegisterInverse c r1 r2
+dispatch c (ShiftLeftRegister r1 r2)  = pure $ shiftLeftRegister c r1 r2
 dispatch c (SkipIfRegisterNeq r1 r2)  = pure $ skipIfRegistersNotEqual c r1 r2
 dispatch c (LoadRegisterI r)          = pure $ setRegisterI c r
 dispatch c (JumpRegister0 addr)       = pure $ jumpRegister0 c addr

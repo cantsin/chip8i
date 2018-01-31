@@ -88,6 +88,12 @@ setRegister c i v =
   record { V = newV } c
 
 export
+setRegisterFlag : (chip : Chip8) -> (value : Bits8) -> Chip8
+setRegisterFlag c v =
+  let newV = replaceAt 0xf v (V c) in
+  record { V = newV } c
+
+export
 setRegisterI : (chip : Chip8) -> (value : Bits16) -> Chip8
 setRegisterI c v =
   record { I = v } c
