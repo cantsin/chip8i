@@ -311,60 +311,89 @@ andRandomValue c r v =
   -- let mask = value `and` intToBits v in
   setRegister c r 0x1 --(cast mask)
 
--- Display
--- SkipIfKeyPressed
--- SkipIfKeyNotPressed
--- LoadRegisterDelay
--- WaitForKeyPress
--- SetDelayFromRegister
--- SetSoundFromRegister
--- AddRegisterI
--- LoadRegisterWithSprite
--- StoreBCD
--- DumpRegisters
--- LoadRegisters
+display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Chip8
+display c r1 r2 s =
+  ?display
 
-unhandledOpcode : (chip : Chip8) -> IO Chip8
-unhandledOpcode c =
-  do
-    putStrLn "(unhandled)"
-    pure c
+skipIfKeyPressed : (chip : Chip8) -> (register : Register) -> Chip8
+skipIfKeyPressed c r =
+  ?skipIfKeyPressed
 
-dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
-dispatch c ClearScreen                = pure $ clearScreen c
-dispatch c Return                     = pure $ popStack c
-dispatch c (Jump addr)                = pure $ jumpDirect c addr
-dispatch c (Call addr)                = pure $ pushStack c
-dispatch c (SkipIfEq r v)             = pure $ skipIfRegisterEqual c r v
-dispatch c (SkipIfNeq r v)            = pure $ skipIfRegisterNotEqual c r v
-dispatch c (SkipIfRegisterEq r1 r2)   = pure $ skipIfRegistersEqual c r1 r2
-dispatch c (LoadRegister r v)         = pure $ setRegister c r v
-dispatch c (AddRegister r v)          = pure $ addRegisterDirect c r v
-dispatch c (CopyRegister r1 r2)       = pure $ copyRegisters c r1 r2
-dispatch c (OrRegister r1 r2)         = pure $ orRegister c r1 r2
-dispatch c (AndRegister r1 r2)        = pure $ andRegister c r1 r2
-dispatch c (XorRegister r1 r2)        = pure $ xorRegister c r1 r2
-dispatch c (AddRegisterCarry r1 r2)   = pure $ addRegisterCarry c r1 r2
-dispatch c (SubRegister r1 r2)        = pure $ subtractRegister c r1 r2
-dispatch c (ShiftRightRegister r1 r2) = pure $ shiftRightRegister c r1 r2
-dispatch c (SubRegisterInverse r1 r2) = pure $ subtractRegisterInverse c r1 r2
-dispatch c (ShiftLeftRegister r1 r2)  = pure $ shiftLeftRegister c r1 r2
-dispatch c (SkipIfRegisterNeq r1 r2)  = pure $ skipIfRegistersNotEqual c r1 r2
-dispatch c (LoadRegisterI r)          = pure $ setRegisterI c r
-dispatch c (JumpRegister0 addr)       = pure $ jumpRegister0 c addr
-dispatch c (Random r v)               = pure $ andRandomValue c r v
-dispatch c (Display r1 r2 s)          = unhandledOpcode c
-dispatch c (SkipIfKeyPressed r)       = unhandledOpcode c
-dispatch c (SkipIfKeyNotPressed r)    = unhandledOpcode c
-dispatch c (LoadRegisterDelay r)      = unhandledOpcode c
-dispatch c (WaitForKeyPress r)        = unhandledOpcode c
-dispatch c (SetDelayFromRegister r)   = unhandledOpcode c
-dispatch c (SetSoundFromRegister r)   = unhandledOpcode c
-dispatch c (AddRegisterI r)           = unhandledOpcode c
-dispatch c (LoadRegisterWithSprite r) = unhandledOpcode c
-dispatch c (StoreBCD r)               = unhandledOpcode c
-dispatch c (DumpRegisters r)          = unhandledOpcode c
-dispatch c (LoadRegisters r)          = unhandledOpcode c
+skipIfKeyNotPressed : (chip : Chip8) -> (register : Register) -> Chip8
+skipIfKeyNotPressed c r =
+  ?skipIfKeyNotPressed
+
+loadRegisterDelay : (chip : Chip8) -> (register : Register) -> Chip8
+loadRegisterDelay c r =
+  ?loadRegisterDelay
+
+waitForKeyPress : (chip : Chip8) -> (register : Register) -> Chip8
+waitForKeyPress c r =
+  ?waitForKeyPress
+
+setDelayFromRegister : (chip : Chip8) -> (register : Register) -> Chip8
+setDelayFromRegister c r =
+  ?setDelayFromRegisteregister
+
+setSoundFromRegister : (chip : Chip8) -> (register : Register) -> Chip8
+setSoundFromRegister c r =
+  ?setSoundFromRegisteregister
+
+addRegisterI : (chip : Chip8) -> (register : Register) -> Chip8
+addRegisterI c r =
+  ?addRegisterI
+
+loadRegisterWithSprite : (chip : Chip8) -> (register : Register) -> Chip8
+loadRegisterWithSprite c r =
+  ?loadRegisterWithSprite
+
+storeBCD : (chip : Chip8) -> (register : Register) -> Chip8
+storeBCD c r =
+  ?storeBCD
+
+dumpRegisters : (chip : Chip8) -> (register : Register) -> Chip8
+dumpRegisters c r =
+  ?dumpRegisters
+
+loadRegisters : (chip : Chip8) -> (register : Register) -> Chip8
+loadRegisters c r =
+  ?loadRegisters
+
+dispatch : (chip : Chip8) -> (opcode : Opcode) -> Chip8
+dispatch c ClearScreen                = clearScreen c
+dispatch c Return                     = popStack c
+dispatch c (Jump addr)                = jumpDirect c addr
+dispatch c (Call addr)                = pushStack c
+dispatch c (SkipIfEq r v)             = skipIfRegisterEqual c r v
+dispatch c (SkipIfNeq r v)            = skipIfRegisterNotEqual c r v
+dispatch c (SkipIfRegisterEq r1 r2)   = skipIfRegistersEqual c r1 r2
+dispatch c (LoadRegister r v)         = setRegister c r v
+dispatch c (AddRegister r v)          = addRegisterDirect c r v
+dispatch c (CopyRegister r1 r2)       = copyRegisters c r1 r2
+dispatch c (OrRegister r1 r2)         = orRegister c r1 r2
+dispatch c (AndRegister r1 r2)        = andRegister c r1 r2
+dispatch c (XorRegister r1 r2)        = xorRegister c r1 r2
+dispatch c (AddRegisterCarry r1 r2)   = addRegisterCarry c r1 r2
+dispatch c (SubRegister r1 r2)        = subtractRegister c r1 r2
+dispatch c (ShiftRightRegister r1 r2) = shiftRightRegister c r1 r2
+dispatch c (SubRegisterInverse r1 r2) = subtractRegisterInverse c r1 r2
+dispatch c (ShiftLeftRegister r1 r2)  = shiftLeftRegister c r1 r2
+dispatch c (SkipIfRegisterNeq r1 r2)  = skipIfRegistersNotEqual c r1 r2
+dispatch c (LoadRegisterI r)          = setRegisterI c r
+dispatch c (JumpRegister0 addr)       = jumpRegister0 c addr
+dispatch c (Random r v)               = andRandomValue c r v
+dispatch c (Display r1 r2 s)          = display c r1 r2 s
+dispatch c (SkipIfKeyPressed r)       = skipIfKeyPressed c r
+dispatch c (SkipIfKeyNotPressed r)    = skipIfKeyNotPressed c r
+dispatch c (LoadRegisterDelay r)      = loadRegisterDelay c r
+dispatch c (WaitForKeyPress r)        = waitForKeyPress c r
+dispatch c (SetDelayFromRegister r)   = setDelayFromRegister c r
+dispatch c (SetSoundFromRegister r)   = setSoundFromRegister c r
+dispatch c (AddRegisterI r)           = addRegisterI c r
+dispatch c (LoadRegisterWithSprite r) = loadRegisterWithSprite c r
+dispatch c (StoreBCD r)               = storeBCD c r
+dispatch c (DumpRegisters r)          = dumpRegisters c r
+dispatch c (LoadRegisters r)          = loadRegisters c r
 
 export
 partial
@@ -380,5 +409,5 @@ runCPU c =
           putStrLn $ "terminating unexpectedly"
       _ =>
         do
-          modifiedC <- dispatch (incrementPC c) instruction
+          modifiedC <- pure $ dispatch (incrementPC c) instruction
           runCPU modifiedC
