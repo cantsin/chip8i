@@ -7,17 +7,12 @@ import Effect.StdIO
 import Effect.Random
 import Effect.State
 
-import Chip8
-import Screen
-import Opcodes
 import Constants
+import Chip8
+import Cpu
+import Opcodes
 
 %default total
-
--- chip: Chip8
--- screen: Screen
--- randomN: next random integer
--- keys: key presses
 
 readROMFromFile : (filename : String) -> IO Buffer
 readROMFromFile filename =
@@ -49,8 +44,7 @@ partial
 main : IO ()
 main =
   do
-    chip <- newChip
+    cpu <- newCpu
     rom <- readROMFromFile "./roms/maze.rom"
-    loadROMAt chip rom StartingAddress
-    runCPU chip
-    -- run $ execute chip
+    loadROMAt cpu rom StartingAddress
+    runCPU cpu

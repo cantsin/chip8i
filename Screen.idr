@@ -29,6 +29,7 @@ ScreenHeight : Nat
 ScreenHeight = 32
 
 -- 64x32 monochrome pixel display
+export
 record Screen where
   constructor MkScreen
   Picture : Vect ScreenWidth (Vect ScreenHeight Pixel)

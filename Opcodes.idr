@@ -7,7 +7,7 @@ import Effect.StdIO
 import Effect.Random
 import Effect.State
 
-import Chip8
+import Cpu
 import Utilities
 
 Register : Type
@@ -183,18 +183,18 @@ opcode op =
 
 -- opcode implementations
 
-clearScreen : (chip : Chip8) -> Chip8
+clearScreen : (cpu : Cpu) -> Cpu
 clearScreen c =
   ?clear
 
-jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
+jumpDirect : (cpu : Cpu) -> (address : Address) -> Cpu
 jumpDirect c addr =
   if (getPC c == (addr + 2)) then
     ?infiniteLoop
   else
     setPC c addr
 
-skipIfRegisterEqual : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+skipIfRegisterEqual : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 skipIfRegisterEqual c r v =
   let toCompare = getRegister c r in
   if v == toCompare then
@@ -202,7 +202,7 @@ skipIfRegisterEqual c r v =
   else
     c
 
-skipIfRegisterNotEqual : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+skipIfRegisterNotEqual : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 skipIfRegisterNotEqual c r v =
   let toCompare = getRegister c r in
   if v /= toCompare then
@@ -210,7 +210,7 @@ skipIfRegisterNotEqual c r v =
   else
     c
 
-skipIfRegistersEqual : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+skipIfRegistersEqual : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 skipIfRegistersEqual c r1 r2 =
   let v1 = getRegister c r1 in
   let v2 = getRegister c r2 in
@@ -219,37 +219,37 @@ skipIfRegistersEqual c r1 r2 =
   else
     c
 
-copyRegisters : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+copyRegisters : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 copyRegisters c r1 r2 =
   let value = getRegister c r2 in
   setRegister c r1 value
 
-orRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+orRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 orRegister c r1 r2 =
   let v1 = cast $ getRegister c r1 in
   let v2 = cast $ getRegister c r2 in
   let result = cast $ bitsToInt (v1 `or` v2) in
   setRegister c r1 result
 
-andRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+andRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 andRegister c r1 r2 =
   let v1 = cast $ getRegister c r1 in
   let v2 = cast $ getRegister c r2 in
   let result = cast $ bitsToInt (v1 `and` v2) in
   setRegister c r1 result
 
-xorRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+xorRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 xorRegister c r1 r2 =
   let v1 = cast $ getRegister c r1 in
   let v2 = cast $ getRegister c r2 in
   let result = cast $ bitsToInt (v1 `xor` v2) in
   setRegister c r1 result
 
-addRegisterCarry : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+addRegisterCarry : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 addRegisterCarry c r1 r2 =
   ?addregistercarry
 
-subtractRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+subtractRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 subtractRegister c r1 r2 =
   let v1 : Int = cast $ getRegister c r1 in
   let v2 : Int = cast $ getRegister c r2 in
@@ -258,7 +258,7 @@ subtractRegister c r1 r2 =
   let newChip = setRegister c r1 result in
   setRegisterFlag newChip flag
 
-shiftRightRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+shiftRightRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 shiftRightRegister c r _ =
   let v = cast $ getRegister c r in
   let one = intToBits 0x1 in
@@ -267,7 +267,7 @@ shiftRightRegister c r _ =
   let newChip = setRegister c r result in
   setRegisterFlag newChip flag
 
-subtractRegisterInverse : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+subtractRegisterInverse : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 subtractRegisterInverse c r1 r2 =
   let v1 : Int = cast $ getRegister c r1 in
   let v2 : Int = cast $ getRegister c r2 in
@@ -276,7 +276,7 @@ subtractRegisterInverse c r1 r2 =
   let newChip = setRegister c r1 result in
   setRegisterFlag newChip flag
 
-shiftLeftRegister : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+shiftLeftRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 shiftLeftRegister c r _ =
   let v = getRegister c r in
   let one = intToBits 0x1 in
@@ -285,7 +285,7 @@ shiftLeftRegister c r _ =
   let newChip = setRegister c r result in
   setRegisterFlag newChip flag
 
-skipIfRegistersNotEqual : (chip : Chip8) -> (register : Register) -> (register : Register) -> Chip8
+skipIfRegistersNotEqual : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 skipIfRegistersNotEqual c r1 r2 =
   let v1 = getRegister c r1 in
   let v2 = getRegister c r2 in
@@ -294,72 +294,72 @@ skipIfRegistersNotEqual c r1 r2 =
   else
     c
 
-addRegisterDirect : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+addRegisterDirect : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 addRegisterDirect c r v =
   let value = getRegister c r in
   setRegister c r (value + v)
 
-jumpRegister0 : (chip : Chip8) -> (address : Address) -> Chip8
+jumpRegister0 : (cpu : Cpu) -> (address : Address) -> Cpu
 jumpRegister0 c addr =
   let value : Bits16 = cast $ getRegister c 0 in
   let newAddress = addr + value in
   jumpDirect c newAddress
 
-andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+andRandomValue : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 andRandomValue c r v =
   -- let value: Bits 16 = 0x1 in -- getRandomByte in
   -- let mask = value `and` intToBits v in
   setRegister c r 0x1 --(cast mask)
 
-display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Chip8
+display : (cpu : Cpu) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Cpu
 display c r1 r2 s =
   ?display
 
-skipIfKeyPressed : (chip : Chip8) -> (register : Register) -> Chip8
+skipIfKeyPressed : (cpu : Cpu) -> (register : Register) -> Cpu
 skipIfKeyPressed c r =
   ?skipIfKeyPressed
 
-skipIfKeyNotPressed : (chip : Chip8) -> (register : Register) -> Chip8
+skipIfKeyNotPressed : (cpu : Cpu) -> (register : Register) -> Cpu
 skipIfKeyNotPressed c r =
   ?skipIfKeyNotPressed
 
-loadRegisterDelay : (chip : Chip8) -> (register : Register) -> Chip8
+loadRegisterDelay : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterDelay c r =
   ?loadRegisterDelay
 
-waitForKeyPress : (chip : Chip8) -> (register : Register) -> Chip8
+waitForKeyPress : (cpu : Cpu) -> (register : Register) -> Cpu
 waitForKeyPress c r =
   ?waitForKeyPress
 
-setDelayFromRegister : (chip : Chip8) -> (register : Register) -> Chip8
+setDelayFromRegister : (cpu : Cpu) -> (register : Register) -> Cpu
 setDelayFromRegister c r =
   ?setDelayFromRegisteregister
 
-setSoundFromRegister : (chip : Chip8) -> (register : Register) -> Chip8
+setSoundFromRegister : (cpu : Cpu) -> (register : Register) -> Cpu
 setSoundFromRegister c r =
   ?setSoundFromRegisteregister
 
-addRegisterI : (chip : Chip8) -> (register : Register) -> Chip8
+addRegisterI : (cpu : Cpu) -> (register : Register) -> Cpu
 addRegisterI c r =
   ?addRegisterI
 
-loadRegisterWithSprite : (chip : Chip8) -> (register : Register) -> Chip8
+loadRegisterWithSprite : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterWithSprite c r =
   ?loadRegisterWithSprite
 
-storeBCD : (chip : Chip8) -> (register : Register) -> Chip8
+storeBCD : (cpu : Cpu) -> (register : Register) -> Cpu
 storeBCD c r =
   ?storeBCD
 
-dumpRegisters : (chip : Chip8) -> (register : Register) -> Chip8
+dumpRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
 dumpRegisters c r =
   ?dumpRegisters
 
-loadRegisters : (chip : Chip8) -> (register : Register) -> Chip8
+loadRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisters c r =
   ?loadRegisters
 
-dispatch : (chip : Chip8) -> (opcode : Opcode) -> Chip8
+dispatch : (cpu : Cpu) -> (opcode : Opcode) -> Cpu
 dispatch c ClearScreen                = clearScreen c
 dispatch c Return                     = popStack c
 dispatch c (Jump addr)                = jumpDirect c addr
@@ -397,12 +397,12 @@ dispatch c (LoadRegisters r)          = loadRegisters c r
 
 export
 partial
-runCPU : (chip : Chip8) -> IO ()
+runCPU : (chip : Cpu) -> IO ()
 runCPU c =
   do
     op <- getOpcode c
     instruction <- pure $ opcode op
-    -- putStrLn $ (show c) ++ " => " ++ (show instruction)
+    putStrLn $ (show c) ++ " => " ++ (show instruction)
     case instruction of
       Invalid _ =>
         do
