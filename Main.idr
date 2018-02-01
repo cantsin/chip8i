@@ -12,6 +12,9 @@ import Chip8
 
 %default total
 
+defaultROM : String
+defaultROM = "./roms/maze.rom"
+
 readROMFromFile : (filename : String) -> IO Buffer
 readROMFromFile filename =
   let maxLength : Int = RamSize - StartingAddress in
@@ -39,11 +42,18 @@ execute chip =
     srand 12345
     putStrLn "Fin."
 
+getROMPath : List String -> String
+getROMPath args =
+  case index' 1 args of
+    Nothing => defaultROM
+    Just path => path
+
 partial
 main : IO ()
 main =
   do
+    args <- getArgs
     chip8 <- newChip8
-    rom <- readROMFromFile "./roms/maze.rom"
+    rom <- readROMFromFile $ getROMPath args
     loadROMAt chip8 rom StartingAddress
     runChip8 chip8
