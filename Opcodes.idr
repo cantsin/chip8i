@@ -3,10 +3,7 @@ module Opcodes
 import Data.Buffer
 import Data.Bits
 import Data.Fin
-import Effects
-import Effect.StdIO
-import Effect.Random
-import Effect.State
+import Data.Vect
 
 import Cpu
 import Screen
@@ -320,15 +317,15 @@ andRandomValue chip r v =
 -- special: modifies external state
 display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Chip8
 display chip r1 r2 s =
-  -- let c = Computer chip in
-  -- let screen = Display chip in
-  -- let x = cast $ getRegister c r1 in
-  -- let y = cast $ getRegister c r2 in
-  -- let loadingAddress = cast $ getRegisterI c in
-  -- let sprite = loadSpriteAt chip loadingAddress in
-  -- let newDisplay = writeSpriteToScreen screen sprite x y in
+  let c = Computer chip in
+  let screen = Display chip in
+  let x = cast $ getRegister c r1 in
+  let y = cast $ getRegister c r2 in
+  let loadingAddress = cast $ getRegisterI c in
+  let sprite = loadSpriteAt chip loadingAddress s in
+  let newDisplay = writeSpriteToScreen screen sprite x y in
+  ?display
   -- record { Display = newDisplay } chip
-  chip
 
 -- special: accesses external state
 skipIfKeyPressed : (cpu : Cpu) -> (register : Register) -> Cpu

@@ -3,6 +3,7 @@ module Chip8
 import System
 import Data.Bits
 import Data.Buffer
+import Data.Vect
 
 import Utilities
 import Constants
@@ -59,8 +60,9 @@ loadDefaultSpriteDataAt chip address =
         pure $ realAddress + 1
 
 export
-loadSpriteAt : (chip : Chip8) -> (address : Int) -> ?sprite
-loadSpriteAt chip address = ?loadSpriteFromMemory
+loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> Vect len Bits8
+loadSpriteAt chip address n =
+  ?loadSpriteFromMemory
 
 export
 getOpcode : (chip : Chip8) -> IO Bits16

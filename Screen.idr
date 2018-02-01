@@ -74,9 +74,10 @@ writePixelToScreen s p x y =
 --   MkSprite : (len : Nat) -> {auto p: len < 16 = True} -> Sprite (Vect len Bits8)
 
 export
-writeSpriteToScreen : (s : Screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> Screen
-writeSpriteToScreen = ?writeSpriteToScreen
+writeSpriteToScreen : (screen : Screen) -> (sprite : Vect len Bits8) -> (x : Int) -> (y : Int) -> Screen
+writeSpriteToScreen screen sprite x y =
   -- ignore empty sprite
+  ?writeSpriteToScreen
 
 export
 defaultSpriteStartingAddress : Fin 16 -> Bits16
