@@ -8,17 +8,17 @@ import Data.Vect
 import Utilities
 import Constants
 import Screen
+import Keypad
 import Cpu
 
-public
+public -- TODO remove
 export
 record Chip8 where
   constructor MkChip8
   Computer : Cpu
   Display : Screen
-  -- 4kb RAM: 0x000 to 0x1ff are reserved, start instruction at 0x200
-  Ram : Buffer
-  -- keys : Keys
+  Ram : Buffer -- 4kb RAM
+  Keys : Keypad
   Counter : Integer
   Halted : Bool
   Waiting : Bool
@@ -33,8 +33,9 @@ newChip8 =
     buf <- Buffer.newBuffer RamSize
     case buf of
       Just ram =>
+        let keys = MkKeypad $ Vect.replicate 16 0 in
         -- TODO initialize random number
-        pure $ MkChip8 newCpu newScreen ram 0 False False 0x00 False
+        pure $ MkChip8 newCpu newScreen ram keys 0 False False 0x00 False
       Nothing =>
         do
           putStrLn "Not enough memory"
