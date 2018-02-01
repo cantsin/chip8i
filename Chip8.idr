@@ -32,6 +32,7 @@ newChip8 =
     buf <- Buffer.newBuffer RamSize
     case buf of
       Just ram =>
+        -- TODO initialize random number
         pure $ MkChip8 newCpu newScreen ram 0 False False 0x00 False
       Nothing =>
         do
@@ -43,34 +44,33 @@ loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
 loadROMAt chip rom address =
   Buffer.copyData rom 0 (Buffer.size rom) (Ram chip) address
 
-export
 getOpcode : (chip : Chip8) -> IO Bits16
-getOpcode c =
-  let ram = Ram c in
-  let cpu = Computer c in
+getOpcode chip =
+  let ram = Ram chip in
+  let cpu = Computer chip in
   let pc : Int = cast $ getPC cpu in
   do
     b1 <- Buffer.getByte ram pc
     b2 <- Buffer.getByte ram (pc + 1)
     pure $ (cast b1) * 0x100 + (cast b2)
 
--- loop:
---   run CPU
---   increment PC
---   increment counter (Hz)
---   tick down DT/ST
---   if reseed, generate new random #
---   if halted, wait for user to press esc before exiting
---   if waiting, wait for user to press key
-
 -- TODO when to draw screen?
 
 export
 partial
 runChip8 : (chip : Chip8) -> IO ()
-runChip8 c =
-  let cpu = Computer c in
+runChip8 chip =
+  let cpu = Computer chip in
+  let counter = Counter chip in
+  -- The CPU runs at roughly 500Hz, however, we want to tick down the
+  -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
+  -- we tick down DT/ST every 8 CPU cycles.
+  let tick = counter `mod` 8 == 1 in
   do
-    instruction <- getOpcode c
+    instruction <- getOpcode chip
     modifiedCpu <- runOneCycle cpu $ opcode instruction
-    runChip8 $ record { Computer = incrementPC modifiedCpu } c
+    computer <- pure $ updateCPUState modifiedCpu tick
+    -- TODO: if Reseed then generate new random #
+    -- TODO: if Halted then wait for user to press esc before exiting
+    -- TODO: if Waiting then wait for user to press key
+    runChip8 $ record { Computer = computer, Counter $= (+ 1) } chip

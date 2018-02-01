@@ -94,3 +94,27 @@ popStack c =
       let newIndex = restrict 15 $ cast n in
       let newStack = replaceAt index 0 (Stack c) in
       record { SP = newIndex, Stack = newStack } c
+
+export
+delayTimerIsActive : (cpu : Cpu) -> Bool
+delayTimerIsActive c = DT c > 0
+
+export
+soundTimerIsActive : (cpu : Cpu) -> Bool
+soundTimerIsActive c = ST c > 0
+
+export
+updateCPUState : (cpu : Cpu) -> (tick : Bool) -> Cpu
+updateCPUState c tick =
+  let currentDT = DT c in
+  let currentST = ST c in
+  let newDT = if tick && delayTimerIsActive c then decrement currentDT else currentDT in
+  let newST = if tick && soundTimerIsActive c then decrement currentST else currentST in
+  record { PC $= (+ 2), ST = newST, DT = newDT } c
+  where
+    decrement : (x : Bits8) -> Bits8
+    decrement x =
+      let xAsInt : Int = cast x in
+      case xAsInt of
+        0 => 0
+        n => cast $ n - 1
