@@ -6,8 +6,8 @@ import Data.Buffer
 
 import Utilities
 import Constants
-import Screen
 import Opcodes
+import Screen
 import Cpu
 
 export
@@ -46,9 +46,9 @@ loadROMAt chip rom address =
 export
 getOpcode : (chip : Chip8) -> IO Bits16
 getOpcode c =
-  let cpu = Computer c in
   let ram = Ram c in
-  let pc : Int = cast $ PC cpu in
+  let cpu = Computer c in
+  let pc : Int = cast $ getPC cpu in
   do
     b1 <- Buffer.getByte ram pc
     b2 <- Buffer.getByte ram (pc + 1)
@@ -69,15 +69,8 @@ export
 partial
 runChip8 : (chip : Chip8) -> IO ()
 runChip8 c =
+  let cpu = Computer c in
   do
-    op <- getOpcode c
-    instruction <- pure $ opcode op
-    putStrLn $ (show $ Computer c) ++ " => " ++ (show instruction)
-    case instruction of
-      Invalid _ =>
-        do
-          putStrLn $ "terminating unexpectedly"
-      _ =>
-        do
-          cpuState <- pure $ dispatch (incrementPC $ Computer c) instruction
-          runChip8 $ record { Computer = cpuState } c
+    instruction <- getOpcode c
+    modifiedCpu <- runOneCycle cpu $ opcode instruction
+    runChip8 $ record { Computer = incrementPC modifiedCpu } c

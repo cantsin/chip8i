@@ -359,7 +359,6 @@ loadRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisters c r =
   ?loadRegisters
 
-export
 dispatch : (cpu : Cpu) -> (opcode : Opcode) -> Cpu
 dispatch c ClearScreen                = clearScreen c
 dispatch c Return                     = popStack c
@@ -395,3 +394,17 @@ dispatch c (LoadRegisterWithSprite r) = loadRegisterWithSprite c r
 dispatch c (StoreBCD r)               = storeBCD c r
 dispatch c (DumpRegisters r)          = dumpRegisters c r
 dispatch c (LoadRegisters r)          = loadRegisters c r
+
+export
+runOneCycle : (cpu : Cpu) -> (opcode : Opcode) -> IO Cpu
+runOneCycle cpu opcode =
+  do
+    putStrLn $ (show cpu) ++ " => " ++ (show opcode)
+    case opcode of
+      Invalid _ =>
+        do
+          putStrLn $ "terminating unexpectedly"
+          pure $ cpu
+      _ =>
+        do
+          pure $ dispatch cpu opcode
