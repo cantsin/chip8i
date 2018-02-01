@@ -82,8 +82,8 @@ defaultSpriteStartingAddress x =
 
 -- 16 8x5 sprites for hexadecimal values
 export
-defaultSpriteData : Vect 0x50 Bits8
-defaultSpriteData = fromList [
+defaultSpriteData : List Bits8
+defaultSpriteData = [
     0xf0, 0x90, 0x90, 0x90, 0xf0,
     0x20, 0x60, 0x20, 0x20, 0x70,
     0xf0, 0x10, 0xf0, 0x80, 0xf0,

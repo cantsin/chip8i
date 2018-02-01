@@ -44,19 +44,19 @@ loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
 loadROMAt chip rom address =
   Buffer.copyData rom 0 (Buffer.size rom) (Ram chip) address
 
--- TODO load into interpreter space
 export
-loadDefaultSpriteDataAt : (chip : Chip8) -> IO ()
-loadDefaultSpriteDataAt chip =
-  do
-    buf <- Buffer.newBuffer (DefaultSpriteDataLength * 0xf)
-    case buf of
-      Just emptyData =>
-        ?copyOverDefaultSpriteData
-      Nothing =>
-        do
-          putStrLn "Not enough memory"
-          System.exitFailure
+loadDefaultSpriteDataAt : (chip : Chip8) -> (address : Int) -> IO Int
+loadDefaultSpriteDataAt chip address =
+  let ram = Ram chip in
+  -- not aware of a faster way, this seems inefficient
+  foldl (writeByte ram) (pure address) defaultSpriteData
+  where
+    writeByte : (buffer : Buffer) -> (addr : IO Int) -> (value : Bits8) -> IO Int
+    writeByte buffer addr value =
+      do
+        realAddress <- addr
+        setByte buffer realAddress value
+        pure $ realAddress + 1
 
 -- TODO load a sprite from RAM
 loadSpriteFromMemory : (ram : Buffer) -> (address : Bits16) -> ?sprite

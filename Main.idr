@@ -65,5 +65,6 @@ main =
     args <- getArgs
     chip8 <- newChip8
     rom <- readROMFromFile $ getROMPath args
+    loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
     runChip8 chip8
