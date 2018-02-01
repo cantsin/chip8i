@@ -425,8 +425,6 @@ runOneCycle chip tick =
   do
     opcodeValue <- getOpcode chip
     instruction <- pure $ extractOpcode opcodeValue
-    -- debugging
-    putStrLn $ (show $ Computer chip) ++ " => " ++ (show instruction)
     case instruction of
       Invalid _ =>
         do
@@ -434,7 +432,9 @@ runOneCycle chip tick =
           putStrLn "Halted: unknown opcode"
           pure $ record { Halted = True } chip
       _ =>
-        let modifiedChip = dispatch chip instruction in
-        let modifiedComputer = updateCPUState (Computer modifiedChip) tick in
         do
+          -- debugging
+          putStrLn $ (show $ Computer chip) ++ " => " ++ (show instruction)
+          modifiedChip <- pure $ dispatch chip instruction
+          modifiedComputer <- pure $ updateCPUState (Computer modifiedChip) tick
           pure $ record { Computer = modifiedComputer } modifiedChip

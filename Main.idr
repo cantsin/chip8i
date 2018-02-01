@@ -45,17 +45,19 @@ getROMPath args =
 partial
 runChip8 : (chip : Chip8) -> IO ()
 runChip8 chip =
-  -- The CPU runs at roughly 500Hz, however, we want to tick down the
-  -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
-  -- we tick down DT/ST every 8 CPU cycles.
-  let counter = Counter chip in
-  let tick = counter `mod` 8 == 1 in
-  do
-    modifiedChip <- runOneCycle chip tick
-    -- TODO: if Halted then wait for user to press esc before exiting
-    if (Halted chip) then
-      pure ()
-    else
+  if (Halted chip) then
+    -- TODO: wait for user to press esc before exiting
+    pure ()
+  else
+    let mustReseed = Reseed chip in
+    let mustWait = Waiting chip in
+    -- The CPU runs at roughly 500Hz, however, we want to tick down the
+    -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
+    -- we tick down DT/ST every 8 CPU cycles.
+    let counter = Counter chip in
+    let tick = counter `mod` 8 == 1 in
+    do
+      modifiedChip <- runOneCycle chip tick
       -- TODO: if Reseed then generate new random #
       -- TODO: if Waiting then wait for user to press key
       runChip8 $ record { Counter $= (+ 1) } modifiedChip
