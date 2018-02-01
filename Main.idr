@@ -9,8 +9,6 @@ import Effect.State
 
 import Constants
 import Chip8
-import Cpu
-import Opcodes
 
 %default total
 
@@ -34,6 +32,7 @@ readROMFromFile filename =
           putStrLn "Could not read ROM"
           System.exitFailure
 
+-- testing purposes
 execute : Chip8 -> Eff () [RND, STDIO]
 execute chip =
   do
@@ -44,7 +43,7 @@ partial
 main : IO ()
 main =
   do
-    cpu <- newCpu
+    chip8 <- newChip8
     rom <- readROMFromFile "./roms/maze.rom"
-    loadROMAt cpu rom StartingAddress
-    runCPU cpu
+    loadROMAt chip8 rom StartingAddress
+    runChip8 chip8

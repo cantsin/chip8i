@@ -121,49 +121,54 @@ Show Opcode where
   show (DumpRegisters r)          = "LD [I], " ++ show r
   show (LoadRegisters r)          = "LD "      ++ show r  ++ ", [I]"
 
-opcodeDispatch : (n : Int) -> (op : Bits16) -> Opcode
-opcodeDispatch 0 op =
-  case op of
-    0x00e0 => ClearScreen
-    0x00ee => Return
-    _ => Invalid op
-opcodeDispatch 0x1 op = Jump          (extractAddress op)
-opcodeDispatch 0x2 op = Call          (extractAddress op)
-opcodeDispatch 0x3 op = SkipIfEq      (extractFirstRegister op) (extractValue op)
-opcodeDispatch 0x4 op = SkipIfNeq     (extractFirstRegister op) (extractValue op)
-opcodeDispatch 0x5 op =
-  case extractFourthNibble op of
-    0x0 => SkipIfRegisterEq           (extractFirstRegister op) (extractSecondRegister op)
-    _ => Invalid op
-opcodeDispatch 0x6 op = LoadRegister  (extractFirstRegister op) (extractValue op)
-opcodeDispatch 0x7 op = AddRegister   (extractFirstRegister op) (extractValue op)
-opcodeDispatch 0x8 op =
-  case extractFourthNibble op of
-    0x0 => CopyRegister               (extractFirstRegister op) (extractSecondRegister op)
-    0x1 => OrRegister                 (extractFirstRegister op) (extractSecondRegister op)
-    0x2 => AndRegister                (extractFirstRegister op) (extractSecondRegister op)
-    0x3 => XorRegister                (extractFirstRegister op) (extractSecondRegister op)
-    0x4 => AddRegisterCarry           (extractFirstRegister op) (extractSecondRegister op)
-    0x5 => SubRegister                (extractFirstRegister op) (extractSecondRegister op)
-    0x6 => ShiftRightRegister         (extractFirstRegister op) (extractSecondRegister op)
-    0x7 => SubRegisterInverse         (extractFirstRegister op) (extractSecondRegister op)
-    0xe => ShiftLeftRegister          (extractFirstRegister op) (extractSecondRegister op)
-    _ => Invalid op
-opcodeDispatch 0x9 op =
-  case extractFourthNibble op of
-    0x0 => SkipIfRegisterNeq          (extractFirstRegister op) (extractSecondRegister op)
-    _ => Invalid op
-opcodeDispatch 0xa op = LoadRegisterI (extractAddress op)
-opcodeDispatch 0xb op = JumpRegister0 (extractAddress op)
-opcodeDispatch 0xc op = Random        (extractFirstRegister op) (extractValue op)
-opcodeDispatch 0xd op = Display       (extractFirstRegister op) (extractSecondRegister op) (extractSpriteLength op)
-opcodeDispatch 0xe op =
-  case extractSecondByte op of
-    0x9e => SkipIfKeyPressed          (extractFirstRegister op)
-    0xa1 => SkipIfKeyNotPressed       (extractFirstRegister op)
-    _ => Invalid op
-opcodeDispatch 0xf op =
-  case extractSecondByte op of
+export
+opcode : (value : Bits16) -> Opcode
+opcode op =
+  let family: Int = cast $ extractFirstNibble op in
+  opcodeDispatch family op where
+  opcodeDispatch : (n : Int) -> (op : Bits16) -> Opcode
+  opcodeDispatch 0 op =
+    case op of
+      0x00e0 => ClearScreen
+      0x00ee => Return
+      _ => Invalid op
+  opcodeDispatch 0x1 op = Jump          (extractAddress op)
+  opcodeDispatch 0x2 op = Call          (extractAddress op)
+  opcodeDispatch 0x3 op = SkipIfEq      (extractFirstRegister op) (extractValue op)
+  opcodeDispatch 0x4 op = SkipIfNeq     (extractFirstRegister op) (extractValue op)
+  opcodeDispatch 0x5 op =
+    case extractFourthNibble op of
+      0x0 => SkipIfRegisterEq           (extractFirstRegister op) (extractSecondRegister op)
+      _ => Invalid op
+  opcodeDispatch 0x6 op = LoadRegister  (extractFirstRegister op) (extractValue op)
+  opcodeDispatch 0x7 op = AddRegister   (extractFirstRegister op) (extractValue op)
+  opcodeDispatch 0x8 op =
+    case extractFourthNibble op of
+      0x0 => CopyRegister               (extractFirstRegister op) (extractSecondRegister op)
+      0x1 => OrRegister                 (extractFirstRegister op) (extractSecondRegister op)
+      0x2 => AndRegister                (extractFirstRegister op) (extractSecondRegister op)
+      0x3 => XorRegister                (extractFirstRegister op) (extractSecondRegister op)
+      0x4 => AddRegisterCarry           (extractFirstRegister op) (extractSecondRegister op)
+      0x5 => SubRegister                (extractFirstRegister op) (extractSecondRegister op)
+      0x6 => ShiftRightRegister         (extractFirstRegister op) (extractSecondRegister op)
+      0x7 => SubRegisterInverse         (extractFirstRegister op) (extractSecondRegister op)
+      0xe => ShiftLeftRegister          (extractFirstRegister op) (extractSecondRegister op)
+      _ => Invalid op
+  opcodeDispatch 0x9 op =
+    case extractFourthNibble op of
+      0x0 => SkipIfRegisterNeq          (extractFirstRegister op) (extractSecondRegister op)
+      _ => Invalid op
+  opcodeDispatch 0xa op = LoadRegisterI (extractAddress op)
+  opcodeDispatch 0xb op = JumpRegister0 (extractAddress op)
+  opcodeDispatch 0xc op = Random        (extractFirstRegister op) (extractValue op)
+  opcodeDispatch 0xd op = Display       (extractFirstRegister op) (extractSecondRegister op) (extractSpriteLength op)
+  opcodeDispatch 0xe op =
+    case extractSecondByte op of
+      0x9e => SkipIfKeyPressed          (extractFirstRegister op)
+      0xa1 => SkipIfKeyNotPressed       (extractFirstRegister op)
+      _ => Invalid op
+  opcodeDispatch 0xf op =
+    case extractSecondByte op of
     0x07 => LoadRegisterDelay         (extractFirstRegister op)
     0x0a => WaitForKeyPress           (extractFirstRegister op)
     0x15 => SetDelayFromRegister      (extractFirstRegister op)
@@ -174,12 +179,7 @@ opcodeDispatch 0xf op =
     0x55 => DumpRegisters             (extractFirstRegister op)
     0x65 => LoadRegisters             (extractFirstRegister op)
     _ => Invalid op
-opcodeDispatch _ op = Invalid op
-
-opcode : (value : Bits16) -> Opcode
-opcode op =
-  let family: Int = cast $ extractFirstNibble op in
-  opcodeDispatch family op
+  opcodeDispatch _ op = Invalid op
 
 -- opcode implementations
 
@@ -359,6 +359,7 @@ loadRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisters c r =
   ?loadRegisters
 
+export
 dispatch : (cpu : Cpu) -> (opcode : Opcode) -> Cpu
 dispatch c ClearScreen                = clearScreen c
 dispatch c Return                     = popStack c
@@ -394,20 +395,3 @@ dispatch c (LoadRegisterWithSprite r) = loadRegisterWithSprite c r
 dispatch c (StoreBCD r)               = storeBCD c r
 dispatch c (DumpRegisters r)          = dumpRegisters c r
 dispatch c (LoadRegisters r)          = loadRegisters c r
-
-export
-partial
-runCPU : (chip : Cpu) -> IO ()
-runCPU c =
-  do
-    op <- getOpcode c
-    instruction <- pure $ opcode op
-    putStrLn $ (show c) ++ " => " ++ (show instruction)
-    case instruction of
-      Invalid _ =>
-        do
-          putStrLn $ "terminating unexpectedly"
-      _ =>
-        do
-          modifiedC <- pure $ dispatch (incrementPC c) instruction
-          runCPU modifiedC

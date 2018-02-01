@@ -20,8 +20,6 @@ record Cpu where
   Stack : Vect 16 Bits16
   -- pseudo SP
   SP : Fin 16
-  -- 4kb RAM: 0x000 to 0x1ff are reserved, start instruction at 0x200
-  Ram : Buffer
   -- delay time register DT
   DT : Bits8
   -- sound timer register ST
@@ -32,35 +30,12 @@ Show Cpu where
   show c = show (PC c) ++ " " ++ show (V c) ++ " " ++ show (I c)
 
 export
-newCpu : IO Cpu
+newCpu : Cpu
 newCpu =
-  do
-    buf <- Buffer.newBuffer RamSize
-    case buf of
-      Just ram =>
-        let v = Vect.replicate 16 0 in
-        let stack = Vect.replicate 16 0 in
-        let pc : Bits16 = cast StartingAddress in
-        pure $ MkCpu v 0 pc stack 0 ram 0 0
-      Nothing =>
-        do
-          putStrLn "Not enough memory"
-          System.exitFailure
-
-export
-loadROMAt : (cpu : Cpu) -> (rom : Buffer) -> (address : Int) -> IO ()
-loadROMAt c rom address =
-  Buffer.copyData rom 0 (Buffer.size rom) (Ram c) address
-
-export
-getOpcode : (cpu : Cpu) -> IO Bits16
-getOpcode c =
-  let pc : Int = cast $ PC c in
-  let ram = Ram c in
-  do
-    b1 <- Buffer.getByte ram pc
-    b2 <- Buffer.getByte ram (pc + 1)
-    pure $ (cast b1) * 0x100 + (cast b2)
+  let v = Vect.replicate 16 0 in
+  let stack = Vect.replicate 16 0 in
+  let pc : Bits16 = cast StartingAddress in
+  MkCpu v 0 pc stack 0 0 0
 
 export
 incrementPC : (cpu : Cpu) -> Cpu

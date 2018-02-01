@@ -35,6 +35,12 @@ record Screen where
   Picture : Vect ScreenWidth (Vect ScreenHeight Pixel)
   WasErased : Bool -- track for VF
 
+export
+newScreen : Screen
+newScreen =
+  let picture = Vect.replicate ScreenWidth $ Vect.replicate ScreenHeight Off in
+  MkScreen picture False
+
 readPixelFromPicture : (s : Screen) -> (x : Fin ScreenWidth) -> (y : Fin ScreenHeight) -> Pixel
 readPixelFromPicture s x y =
   let picture = Picture s in
