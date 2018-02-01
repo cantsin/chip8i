@@ -44,6 +44,24 @@ loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
 loadROMAt chip rom address =
   Buffer.copyData rom 0 (Buffer.size rom) (Ram chip) address
 
+-- TODO load into interpreter space
+export
+loadDefaultSpriteDataAt : (chip : Chip8) -> IO ()
+loadDefaultSpriteDataAt chip =
+  do
+    buf <- Buffer.newBuffer (DefaultSpriteDataLength * 0xf)
+    case buf of
+      Just emptyData =>
+        ?copyOverDefaultSpriteData
+      Nothing =>
+        do
+          putStrLn "Not enough memory"
+          System.exitFailure
+
+-- TODO load a sprite from RAM
+loadSpriteFromMemory : (ram : Buffer) -> (address : Bits16) -> ?sprite
+loadSpriteFromMemory = ?loadSpriteFromMemory
+
 export
 getOpcode : (chip : Chip8) -> IO Bits16
 getOpcode chip =

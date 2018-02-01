@@ -1,8 +1,6 @@
 module Screen
 
-import System
 import Data.Bits
-import Data.Buffer
 import Data.Vect
 
 import Constants
@@ -71,34 +69,19 @@ writePixelToScreen s p x y =
 -- data Sprite : Vect Nat Bits8 -> Type where
 --   MkSprite : (len : Nat) -> {auto p: len < 16 = True} -> Sprite (Vect len Bits8)
 
--- load a sprite from RAM
-loadSpriteFromMemory : (ram : Buffer) -> (address : Bits16) -> ?sprite
-loadSpriteFromMemory = ?loadSpriteFromMemory
-
 writeSpriteToScreen : (s : Screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteToScreen = ?writeSpriteToScreen
   -- ignore empty sprite
 
+export
 defaultSpriteStartingAddress : Fin 16 -> Bits16
 defaultSpriteStartingAddress x =
   let spriteOffset = cast $ finToNat x in
   let offsetAddress = DefaultSpriteDataLength * spriteOffset in
   cast $ DefaultSpriteDataAddress + offsetAddress
 
--- load into interpreter space
-copyOverDefaultSpriteData : (ram : Buffer) -> IO ()
-copyOverDefaultSpriteData ram =
-  do
-    buf <- Buffer.newBuffer (DefaultSpriteDataLength * 0xf)
-    case buf of
-      Just emptyData =>
-        ?copyOverDefaultSpriteData
-      Nothing =>
-        do
-          putStrLn "Not enough memory"
-          System.exitFailure
-
 -- 16 8x5 sprites for hexadecimal values
+export
 defaultSpriteData : Vect 0x50 Bits8
 defaultSpriteData = fromList [
     0xf0, 0x90, 0x90, 0x90, 0xf0,
