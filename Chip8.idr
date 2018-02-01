@@ -6,10 +6,10 @@ import Data.Buffer
 
 import Utilities
 import Constants
-import Opcodes
 import Screen
 import Cpu
 
+public
 export
 record Chip8 where
   constructor MkChip8
@@ -22,7 +22,7 @@ record Chip8 where
   Halted : Bool
   Waiting : Bool
   -- keep track of the next random byte to use
-  RandomN : Bits8
+  RandomNumber : Bits8
   Reseed : Bool
 
 export
@@ -44,6 +44,7 @@ loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
 loadROMAt chip rom address =
   Buffer.copyData rom 0 (Buffer.size rom) (Ram chip) address
 
+export
 getOpcode : (chip : Chip8) -> IO Bits16
 getOpcode chip =
   let ram = Ram chip in
@@ -53,24 +54,3 @@ getOpcode chip =
     b1 <- Buffer.getByte ram pc
     b2 <- Buffer.getByte ram (pc + 1)
     pure $ (cast b1) * 0x100 + (cast b2)
-
--- TODO when to draw screen?
-
-export
-partial
-runChip8 : (chip : Chip8) -> IO ()
-runChip8 chip =
-  let cpu = Computer chip in
-  let counter = Counter chip in
-  -- The CPU runs at roughly 500Hz, however, we want to tick down the
-  -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
-  -- we tick down DT/ST every 8 CPU cycles.
-  let tick = counter `mod` 8 == 1 in
-  do
-    instruction <- getOpcode chip
-    modifiedCpu <- runOneCycle cpu $ opcode instruction
-    computer <- pure $ updateCPUState modifiedCpu tick
-    -- TODO: if Reseed then generate new random #
-    -- TODO: if Halted then wait for user to press esc before exiting
-    -- TODO: if Waiting then wait for user to press key
-    runChip8 $ record { Computer = computer, Counter $= (+ 1) } chip

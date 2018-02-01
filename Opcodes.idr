@@ -1,5 +1,6 @@
 module Opcodes
 
+import Data.Buffer
 import Data.Bits
 import Data.Fin
 import Effects
@@ -8,6 +9,7 @@ import Effect.Random
 import Effect.State
 
 import Cpu
+import Chip8
 import Utilities
 
 Register : Type
@@ -184,9 +186,9 @@ opcode op =
 
 -- opcode implementations
 
-clearScreen : (cpu : Cpu) -> Cpu
-clearScreen c =
-  ?clear
+clearScreen : (chip8 : Chip8) -> Chip8
+clearScreen chip =
+  record { Display = newScreen } chip
 
 jumpDirect : (cpu : Cpu) -> (address : Address) -> Cpu
 jumpDirect c addr =
@@ -306,11 +308,12 @@ jumpRegister0 c addr =
   let newAddress = addr + value in
   jumpDirect c newAddress
 
-andRandomValue : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
-andRandomValue c r v =
-  -- let value: Bits 16 = 0x1 in -- getRandomByte in
-  -- let mask = value `and` intToBits v in
-  setRegister c r 0x1 --(cast mask)
+andRandomValue : (chip : Chip8) -> (cpu : Cpu) -> (register : Register) -> (value : Value) -> Chip8
+andRandomValue chip c r v =
+  let value = RandomNumber chip in
+  let mask = value `and` intToBits v in
+  let cpu = setRegister c r $ cast mask in
+  record { Reseed = True, Computer = cpu } chip
 
 display : (cpu : Cpu) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Cpu
 display c r1 r2 s =
