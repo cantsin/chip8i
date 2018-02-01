@@ -42,23 +42,21 @@ getROMPath args =
     Nothing => defaultROM
     Just path => path
 
+partial
 runChip8 : (chip : Chip8) -> IO ()
 runChip8 chip =
-  -- TODO when to draw screen?
-  let cpu = Computer chip in
-  let counter = Counter chip in
   -- The CPU runs at roughly 500Hz, however, we want to tick down the
   -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
   -- we tick down DT/ST every 8 CPU cycles.
+  let counter = Counter chip in
   let tick = counter `mod` 8 == 1 in
   do
-    instruction <- getOpcode chip
-    modifiedCpu <- runOneCycle cpu $ opcode instruction
-    computer <- pure $ updateCPUState modifiedCpu tick
+    modifiedChip <- runOneCycle chip tick
     -- TODO: if Reseed then generate new random #
     -- TODO: if Halted then wait for user to press esc before exiting
     -- TODO: if Waiting then wait for user to press key
-    runChip8 $ record { Computer = computer, Counter $= (+ 1) } chip
+    runChip8 $ record { Counter $= (+ 1) } modifiedChip
+    -- TODO when to draw screen?
 
 partial
 main : IO ()
