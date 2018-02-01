@@ -69,6 +69,10 @@ setRegisterFlag c v =
   record { V = newV } c
 
 export
+getRegisterI : (cpu : Cpu) -> Bits16
+getRegisterI c = I c
+
+export
 setRegisterI : (cpu : Cpu) -> (value : Bits16) -> Cpu
 setRegisterI c v =
   record { I = v } c

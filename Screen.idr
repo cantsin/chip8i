@@ -9,6 +9,10 @@ import Utilities
 -- a bit represents a monochrome pixel
 data Pixel = On | Off
 
+Show Pixel where
+  show On = "▓"
+  show Off = " "
+
 xorOnePixel : (p1 : Pixel) -> (p2 : Pixel) -> Pixel
 xorOnePixel On Off = On
 xorOnePixel Off On = On
@@ -69,6 +73,7 @@ writePixelToScreen s p x y =
 -- data Sprite : Vect Nat Bits8 -> Type where
 --   MkSprite : (len : Nat) -> {auto p: len < 16 = True} -> Sprite (Vect len Bits8)
 
+export
 writeSpriteToScreen : (s : Screen) -> (sprite : ?sprite) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteToScreen = ?writeSpriteToScreen
   -- ignore empty sprite

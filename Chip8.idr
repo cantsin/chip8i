@@ -58,9 +58,9 @@ loadDefaultSpriteDataAt chip address =
         setByte buffer realAddress value
         pure $ realAddress + 1
 
--- TODO load a sprite from RAM
-loadSpriteFromMemory : (ram : Buffer) -> (address : Bits16) -> ?sprite
-loadSpriteFromMemory = ?loadSpriteFromMemory
+export
+loadSpriteAt : (chip : Chip8) -> (address : Int) -> ?sprite
+loadSpriteAt chip address = ?loadSpriteFromMemory
 
 export
 getOpcode : (chip : Chip8) -> IO Bits16

@@ -318,9 +318,16 @@ andRandomValue chip r v =
   record { Reseed = True, Computer = cpu } chip
 
 -- special: modifies external state
-display : (cpu : Cpu) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Cpu
-display c r1 r2 s =
-  ?display
+display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Chip8
+display chip r1 r2 s =
+  let cpu = Computer chip in
+  let screen = Display chip in
+  let x = cast $ getRegister cpu r1 in
+  let y = cast $ getRegister cpu r2 in
+  let loadingAddress = cast $ getRegisterI cpu in
+  let sprite = loadSpriteAt chip loadingAddress in
+  let newDisplay = writeSpriteToScreen screen sprite x y in
+  record { Display = newDisplay } chip
 
 -- special: accesses external state
 skipIfKeyPressed : (cpu : Cpu) -> (register : Register) -> Cpu
@@ -398,7 +405,7 @@ dispatch chip (SkipIfRegisterNeq r1 r2)  = updateCPU chip $ skipIfRegistersNotEq
 dispatch chip (LoadRegisterI r)          = updateCPU chip $ setRegisterI (Computer chip) r
 dispatch chip (JumpRegister0 addr)       = updateCPU chip $ jumpRegister0 (Computer chip) addr
 dispatch chip (Random r v)               = andRandomValue chip r v
-dispatch chip (Display r1 r2 s)          = updateCPU chip $ display (Computer chip) r1 r2 s
+dispatch chip (Display r1 r2 s)          = display chip r1 r2 s
 dispatch chip (SkipIfKeyPressed r)       = updateCPU chip $ skipIfKeyPressed (Computer chip) r
 dispatch chip (SkipIfKeyNotPressed r)    = updateCPU chip $ skipIfKeyNotPressed (Computer chip) r
 dispatch chip (LoadRegisterDelay r)      = updateCPU chip $ loadRegisterDelay (Computer chip) r
