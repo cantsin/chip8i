@@ -61,13 +61,12 @@ loadDefaultSpriteDataAt chip address =
         pure $ offset + 1
 
 export
-loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> Vect len Bits8
+loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect len Bits8)
 loadSpriteAt chip address n =
   let ram = Ram chip in
   -- read n bytes
   -- getByte ram (address + offset)
   -- can do either list or directly as a vect
-  -- ... but need IO.
   ?loadSpriteFromMemory
 
 export
