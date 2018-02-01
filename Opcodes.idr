@@ -45,7 +45,6 @@ Value = Bits8
 extractValue : (value : Bits16) -> Value
 extractValue = extractSecondByte
 
-export
 data Opcode =
   Invalid Bits16
   | ClearScreen
@@ -86,7 +85,6 @@ data Opcode =
 Show Register where
   show r = "V" ++ (show $ finToNat r)
 
-export
 Show Opcode where
   show (Invalid op)               = "??? "     ++ show op
   show ClearScreen                = "CLS"
@@ -124,7 +122,6 @@ Show Opcode where
   show (DumpRegisters r)          = "LD [I], " ++ show r
   show (LoadRegisters r)          = "LD "      ++ show r  ++ ", [I]"
 
-export
 extractOpcode : (value : Bits16) -> Opcode
 extractOpcode op =
   let family: Int = cast $ extractFirstNibble op in
@@ -320,14 +317,17 @@ andRandomValue chip r v =
   let cpu = setRegister c r value in
   record { Reseed = True, Computer = cpu } chip
 
+-- special: modifies external state
 display : (cpu : Cpu) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Cpu
 display c r1 r2 s =
   ?display
 
+-- special: accesses external state
 skipIfKeyPressed : (cpu : Cpu) -> (register : Register) -> Cpu
 skipIfKeyPressed c r =
   ?skipIfKeyPressed
 
+-- special: accesses external state
 skipIfKeyNotPressed : (cpu : Cpu) -> (register : Register) -> Cpu
 skipIfKeyNotPressed c r =
   ?skipIfKeyNotPressed
@@ -336,6 +336,8 @@ loadRegisterDelay : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterDelay c r =
   ?loadRegisterDelay
 
+-- special: modifies external state
+-- TODO: may be problematic?
 waitForKeyPress : (cpu : Cpu) -> (register : Register) -> Cpu
 waitForKeyPress c r =
   ?waitForKeyPress
