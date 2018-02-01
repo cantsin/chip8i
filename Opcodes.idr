@@ -320,14 +320,15 @@ andRandomValue chip r v =
 -- special: modifies external state
 display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Chip8
 display chip r1 r2 s =
-  let cpu = Computer chip in
-  let screen = Display chip in
-  let x = cast $ getRegister cpu r1 in
-  let y = cast $ getRegister cpu r2 in
-  let loadingAddress = cast $ getRegisterI cpu in
-  let sprite = loadSpriteAt chip loadingAddress in
-  let newDisplay = writeSpriteToScreen screen sprite x y in
-  record { Display = newDisplay } chip
+  -- let c = Computer chip in
+  -- let screen = Display chip in
+  -- let x = cast $ getRegister c r1 in
+  -- let y = cast $ getRegister c r2 in
+  -- let loadingAddress = cast $ getRegisterI c in
+  -- let sprite = loadSpriteAt chip loadingAddress in
+  -- let newDisplay = writeSpriteToScreen screen sprite x y in
+  -- record { Display = newDisplay } chip
+  chip
 
 -- special: accesses external state
 skipIfKeyPressed : (cpu : Cpu) -> (register : Register) -> Cpu
@@ -429,8 +430,9 @@ runOneCycle chip tick =
     case instruction of
       Invalid _ =>
         do
-          putStrLn $ "terminating unexpectedly"
-          pure $ chip
+          putStrLn $ (show $ Computer chip) ++ " => " ++ (show instruction)
+          putStrLn "Halted: unknown opcode"
+          pure $ record { Halted = True } chip
       _ =>
         let modifiedChip = dispatch chip instruction in
         let modifiedComputer = updateCPUState (Computer modifiedChip) tick in

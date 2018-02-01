@@ -52,11 +52,14 @@ runChip8 chip =
   let tick = counter `mod` 8 == 1 in
   do
     modifiedChip <- runOneCycle chip tick
-    -- TODO: if Reseed then generate new random #
     -- TODO: if Halted then wait for user to press esc before exiting
-    -- TODO: if Waiting then wait for user to press key
-    runChip8 $ record { Counter $= (+ 1) } modifiedChip
-    -- TODO when to draw screen?
+    if (Halted chip) then
+      pure ()
+    else
+      -- TODO: if Reseed then generate new random #
+      -- TODO: if Waiting then wait for user to press key
+      runChip8 $ record { Counter $= (+ 1) } modifiedChip
+      -- TODO when to draw screen?
 
 partial
 main : IO ()
@@ -68,3 +71,4 @@ main =
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
     runChip8 chip8
+    putStrLn "Fin."
