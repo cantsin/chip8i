@@ -431,6 +431,7 @@ runOneCycle chip tick =
       _ =>
         do
           -- debugging
+          putStrLn $ (show $ Display chip)
           putStrLn $ (show $ Computer chip) ++ " => " ++ (show instruction)
           modifiedChip <- pure $ dispatch chip instruction
           modifiedComputer <- pure $ updateCPUState (Computer modifiedChip) tick

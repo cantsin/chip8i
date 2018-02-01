@@ -11,7 +11,7 @@ data Pixel = On | Off
 
 Show Pixel where
   show On = "▓"
-  show Off = " "
+  show Off = "░"
 
 xorOnePixel : (p1 : Pixel) -> (p2 : Pixel) -> Pixel
 xorOnePixel On Off = On
@@ -34,27 +34,36 @@ ScreenHeight = 32
 export
 record Screen where
   constructor MkScreen
-  Picture : Vect ScreenWidth (Vect ScreenHeight Pixel)
+  Picture : Vect ScreenHeight (Vect ScreenWidth Pixel)
   WasErased : Bool -- track for VF
+
+export
+Show Screen where
+  show s = foldl drawRow "" (Picture s)
+  where
+    concatenate : (accum : String) -> (p : Pixel) -> String
+    concatenate accum val = accum ++ show val
+    drawRow : (accum : String) -> (row : Vect ScreenWidth Pixel) -> String
+    drawRow accum row = accum ++ (foldl concatenate "" row) ++ "\n"
 
 export
 newScreen : Screen
 newScreen =
-  let picture = Vect.replicate ScreenWidth $ Vect.replicate ScreenHeight Off in
+  let picture = Vect.replicate ScreenHeight $ Vect.replicate ScreenWidth Off in
   MkScreen picture False
 
 readPixelFromPicture : (s : Screen) -> (x : Fin ScreenWidth) -> (y : Fin ScreenHeight) -> Pixel
 readPixelFromPicture s x y =
   let picture = Picture s in
-  let column = Vect.index x picture in
-  Vect.index y column
+  let row = Vect.index y picture in
+  Vect.index x row
 
 writePixelToPicture : (s : Screen) -> (p : Pixel) -> (x : Fin ScreenWidth) -> (y : Fin ScreenHeight) -> Screen
 writePixelToPicture s p x y =
   let picture = Picture s in
-  let column = Vect.index x picture in
-  let newColumn = replaceAt y p column in
-  let newPicture = replaceAt x newColumn picture in
+  let row = Vect.index y picture in
+  let newRow = replaceAt x p row in
+  let newPicture = replaceAt y newRow picture in
   record { Picture = newPicture } s
 
 writePixelToScreen : (s : Screen) -> (p : Pixel) -> (x : Int) -> (y : Int) -> Screen
