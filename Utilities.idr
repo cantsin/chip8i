@@ -39,6 +39,12 @@ Cast Bits8 (Bits 8) where
     intToBits $ the Integer $ cast asInt
 
 export
+Cast (Bits 8) Bits8 where
+  cast x =
+    let asInteger: Integer = bitsToInt x in
+    cast $ the Int $ fromInteger asInteger
+
+export
 Cast Bits8 (Fin 16) where
   cast x =
     let reg: Int = cast x in

@@ -187,6 +187,7 @@ extractOpcode op =
 
 -- opcode implementations
 
+-- special: modifies external state
 clearScreen : (chip8 : Chip8) -> Chip8
 clearScreen chip =
   record { Display = newScreen } chip
@@ -309,13 +310,15 @@ jumpRegister0 c addr =
   let newAddress = addr + value in
   jumpDirect c newAddress
 
-andRandomValue : (chip : Chip8) -> (cpu : Cpu) -> (register : Register) -> (value : Value) -> Chip8
-andRandomValue chip c r v =
-  -- let value = RandomNumber chip in
-  -- let mask = value `and` intToBits v in
-  -- let cpu = setRegister c r $ cast mask in
-  -- record { Reseed = True, Computer = cpu } chip
-  chip
+-- special: modifies external state
+andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> Chip8
+andRandomValue chip r v =
+  let c = Computer chip in
+  let rand = cast $ RandomNumber chip in
+  let mask = cast v in
+  let value = cast $ rand `and` mask in
+  let cpu = setRegister c r value in
+  record { Reseed = True, Computer = cpu } chip
 
 display : (cpu : Cpu) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> Cpu
 display c r1 r2 s =
@@ -365,6 +368,7 @@ loadRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisters c r =
   ?loadRegisters
 
+-- convenience function: most opcodes only modify the CPU.
 updateCPU : (chip : Chip8) -> (cpu : Cpu) -> Chip8
 updateCPU chip c =
   record { Computer = c } chip
@@ -391,7 +395,7 @@ dispatch chip (ShiftLeftRegister r1 r2)  = updateCPU chip $ shiftLeftRegister (C
 dispatch chip (SkipIfRegisterNeq r1 r2)  = updateCPU chip $ skipIfRegistersNotEqual (Computer chip) r1 r2
 dispatch chip (LoadRegisterI r)          = updateCPU chip $ setRegisterI (Computer chip) r
 dispatch chip (JumpRegister0 addr)       = updateCPU chip $ jumpRegister0 (Computer chip) addr
-dispatch chip (Random r v)               = andRandomValue chip (Computer chip) r v
+dispatch chip (Random r v)               = andRandomValue chip r v
 dispatch chip (Display r1 r2 s)          = updateCPU chip $ display (Computer chip) r1 r2 s
 dispatch chip (SkipIfKeyPressed r)       = updateCPU chip $ skipIfKeyPressed (Computer chip) r
 dispatch chip (SkipIfKeyNotPressed r)    = updateCPU chip $ skipIfKeyNotPressed (Computer chip) r
