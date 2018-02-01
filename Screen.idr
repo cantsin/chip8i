@@ -67,12 +67,6 @@ writePixelToScreen s p x y =
   let wasErased = pixelWasErased pixel p || WasErased s in
   record { WasErased = wasErased } newScreen
 
--- {len: Nat} -> (Fin len) -> {auto p: len < 16 = True} -> Vect len Bits8
-
--- a sprite may be up to 8x15 pixels
--- data Sprite : Vect Nat Bits8 -> Type where
---   MkSprite : (len : Nat) -> {auto p: len < 16 = True} -> Sprite (Vect len Bits8)
-
 export
 writeSpriteToScreen : (screen : Screen) -> (sprite : Vect len Bits8) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteToScreen screen sprite x y =

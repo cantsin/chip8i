@@ -55,13 +55,18 @@ loadDefaultSpriteDataAt chip address =
     writeByte : (buffer : Buffer) -> (addr : IO Int) -> (value : Bits8) -> IO Int
     writeByte buffer addr value =
       do
-        realAddress <- addr
-        setByte buffer realAddress value
-        pure $ realAddress + 1
+        offset <- addr
+        setByte buffer offset value
+        pure $ offset + 1
 
 export
 loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> Vect len Bits8
 loadSpriteAt chip address n =
+  let ram = Ram chip in
+  -- read n bytes
+  -- getByte ram (address + offset)
+  -- can do either list or directly as a vect
+  -- ... but need IO.
   ?loadSpriteFromMemory
 
 export
