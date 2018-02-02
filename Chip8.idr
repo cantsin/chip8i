@@ -64,10 +64,21 @@ export
 loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect len Bits8)
 loadSpriteAt chip address n =
   let ram = Ram chip in
-  -- read n bytes
-  -- getByte ram (address + offset)
-  -- can do either list or directly as a vect
-  ?loadSpriteFromMemory
+  let limit = cast $ finToNat n in
+  do
+    spriteData <- readByte ram address limit (pure [])
+    putStrLn $ show limit
+    putStrLn $ show spriteData
+    --pure $ fromList' Nil spriteData
+    ?hole
+  where
+    readByte : (buffer : Buffer) -> (offset : Int) -> (limit : Int) -> (accum : IO (List Bits8)) -> IO (List Bits8)
+    readByte buffer offset 0 accum = accum
+    readByte buffer offset limit accum =
+      do
+        val <- getByte buffer offset
+        current <- accum
+        readByte buffer (offset + 1) (limit - 1) (pure $ current ++ [val])
 
 export
 getOpcode : (chip : Chip8) -> IO Bits16
