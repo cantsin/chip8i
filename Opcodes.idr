@@ -187,21 +187,17 @@ extractOpcode op =
 -- special: modifies external state
 clearScreen : (chip8 : Chip8) -> Chip8
 clearScreen chip =
-  record { Display = newScreen } chip
-
--- TODO get rid of this ugly hack
-subtractAddress : (address : Address) -> Address
-subtractAddress 0 = 0
-subtractAddress 1 = 0
-subtractAddress n = cast $ (the Int $ cast n) - 2
+  let c = getComputer chip in
+  record { Display = newScreen, Computer = incrementPC c } chip
 
 jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect chip addr =
   let c = getComputer chip in
   if (getPC c == addr) then
+    -- TODO Error
     record { Halted = (True, "Infinite loop") } chip
   else
-    record { Computer = setPC c $ subtractAddress addr } chip
+    record { Computer = setPC c addr } chip
 
 skipIfRegisterEqual : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 skipIfRegisterEqual c r v =
@@ -335,7 +331,7 @@ andRandomValue chip r v =
     rand <- run $ getRandomByte (getCounter chip)
     value <- pure $ cast rand `and` mask
     cpu <- pure $ setRegister c r $ cast value
-    pure $ record { Computer = cpu } chip
+    pure $ record { Computer = incrementPC cpu } chip
 
 -- special: modifies external state
 display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> IO Chip8
@@ -348,7 +344,7 @@ display chip r1 r2 s =
   do
     sprite <- loadSpriteAt chip loadingAddress s
     newDisplay <- pure $ writeSpriteToScreen screen sprite x y
-    pure $ record { Display = newDisplay } chip
+    pure $ record { Display = newDisplay, Computer = incrementPC c } chip
 
 -- special: accesses external state
 skipIfKeyPressed : (cpu : Cpu) -> (register : Register) -> Cpu
@@ -401,7 +397,7 @@ loadRegisters c r =
 -- convenience function: most opcodes only modify the CPU.
 updateCPU : (chip : Chip8) -> (cpu : Cpu) -> IO Chip8
 updateCPU chip c =
-  pure $ record { Computer = c } chip
+  pure $ record { Computer = incrementPC c } chip
 
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch chip ClearScreen                = pure $ clearScreen chip
@@ -456,5 +452,5 @@ runOneCycle chip tick =
           putStrLn $ (show $ getDisplay chip)
           putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
           modifiedChip <- dispatch chip instruction
-          modifiedComputer <- pure $ updateCPUState (getComputer modifiedChip) tick
+          modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
           pure $ record { Computer = modifiedComputer } modifiedChip

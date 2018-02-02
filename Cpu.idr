@@ -108,13 +108,13 @@ soundTimerIsActive : (cpu : Cpu) -> Bool
 soundTimerIsActive c = ST c > 0
 
 export
-updateCPUState : (cpu : Cpu) -> (tick : Bool) -> Cpu
-updateCPUState c tick =
+updateCPUTimers : (cpu : Cpu) -> (tick : Bool) -> Cpu
+updateCPUTimers c tick =
   let currentDT = DT c in
   let currentST = ST c in
   let newDT = if tick && delayTimerIsActive c then decrement currentDT else currentDT in
   let newST = if tick && soundTimerIsActive c then decrement currentST else currentST in
-  record { PC $= (+ 2), ST = newST, DT = newDT } c
+  record { ST = newST, DT = newDT } c
   where
     decrement : (x : Bits8) -> Bits8
     decrement x =
