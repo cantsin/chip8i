@@ -189,16 +189,19 @@ clearScreen : (chip8 : Chip8) -> Chip8
 clearScreen chip =
   record { Display = newScreen } chip
 
-jumpDirect : (cpu : Cpu) -> (address : Address) -> Cpu
-jumpDirect c addr =
+-- TODO get rid of this ugly hack
+subtractAddress : (address : Address) -> Address
+subtractAddress 0 = 0
+subtractAddress 1 = 0
+subtractAddress n = cast $ (the Int $ cast n) - 2
+
+jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
+jumpDirect chip addr =
+  let c = getComputer chip in
   if (getPC c == addr) then
-    ?infiniteLoop
+    record { Halted = (True, "Infinite loop") } chip
   else
-    let newAddress = the Int $ cast addr in
-    case newAddress of
-      0 => setPC c 0
-      1 => setPC c 0
-      n => setPC c $ cast $ newAddress - 2
+    record { Computer = setPC c $ subtractAddress addr } chip
 
 skipIfRegisterEqual : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 skipIfRegisterEqual c r v =
@@ -305,11 +308,12 @@ addRegisterDirect c r v =
   let value = getRegister c r in
   setRegister c r (value + v)
 
-jumpRegister0 : (cpu : Cpu) -> (address : Address) -> Cpu
-jumpRegister0 c addr =
+jumpRegister0 : (chip : Chip8) -> (address : Address) -> Chip8
+jumpRegister0 chip addr =
+  let c = getComputer chip in
   let value : Bits16 = cast $ getRegister c 0 in
   let newAddress = addr + value in
-  jumpDirect c newAddress
+  jumpDirect chip newAddress
 
 -- this is a hack. we do not run effects in one block, so fake
 -- randomness by seeding with the CPU counter multiplied by the
@@ -402,7 +406,7 @@ updateCPU chip c =
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch chip ClearScreen                = pure $ clearScreen chip
 dispatch chip Return                     = updateCPU chip $ popStack (getComputer chip)
-dispatch chip (Jump addr)                = updateCPU chip $ jumpDirect (getComputer chip) addr
+dispatch chip (Jump addr)                = pure $ jumpDirect chip addr
 dispatch chip (Call addr)                = updateCPU chip $ pushStack (getComputer chip)
 dispatch chip (SkipIfEq r v)             = updateCPU chip $ skipIfRegisterEqual (getComputer chip) r v
 dispatch chip (SkipIfNeq r v)            = updateCPU chip $ skipIfRegisterNotEqual (getComputer chip) r v
@@ -420,7 +424,7 @@ dispatch chip (SubRegisterInverse r1 r2) = updateCPU chip $ subtractRegisterInve
 dispatch chip (ShiftLeftRegister r1 r2)  = updateCPU chip $ shiftLeftRegister (getComputer chip) r1 r2
 dispatch chip (SkipIfRegisterNeq r1 r2)  = updateCPU chip $ skipIfRegistersNotEqual (getComputer chip) r1 r2
 dispatch chip (LoadRegisterI r)          = updateCPU chip $ setRegisterI (getComputer chip) r
-dispatch chip (JumpRegister0 addr)       = updateCPU chip $ jumpRegister0 (getComputer chip) addr
+dispatch chip (JumpRegister0 addr)       = pure $ jumpRegister0 chip addr
 dispatch chip (Random r v)               = andRandomValue chip r v
 dispatch chip (Display r1 r2 s)          = display chip r1 r2 s
 dispatch chip (SkipIfKeyPressed r)       = updateCPU chip $ skipIfKeyPressed (getComputer chip) r
@@ -445,8 +449,7 @@ runOneCycle chip tick =
       Invalid _ =>
         do
           putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
-          putStrLn "Halted: unknown opcode"
-          pure $ record { Halted = True } chip
+          pure $ record { Halted = (True, "Unknown opcode") } chip
       _ =>
         do
           -- debugging

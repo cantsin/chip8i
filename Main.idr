@@ -43,7 +43,9 @@ runChip8 : (chip : Chip8) -> IO ()
 runChip8 chip =
   if (isHalted chip) then
     -- TODO: wait for user to press esc before exiting
-    pure ()
+    do
+      putStrLn $ "Chip8 halted: " ++ haltedReason chip
+      pure ()
   else
     let mustWait = isWaiting chip in
     -- The CPU runs at roughly 500Hz, however, we want to tick down the

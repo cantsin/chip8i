@@ -19,7 +19,7 @@ record Chip8 where
   Ram : Buffer -- 4kb RAM
   Keys : Keypad
   Counter : Integer
-  Halted : Bool
+  Halted : (Bool, String)
   Waiting : Bool
 
 export
@@ -30,7 +30,7 @@ newChip8 =
     case buf of
       Just ram =>
         let keys = MkKeypad $ Vect.replicate 16 0 in
-        pure $ MkChip8 newCpu newScreen ram keys 0 False False
+        pure $ MkChip8 newCpu newScreen ram keys 0 (False, "") False
       Nothing =>
         do
           putStrLn "Not enough memory"
@@ -50,7 +50,11 @@ getCounter = Counter
 
 export
 isHalted : (chip : Chip8) -> Bool
-isHalted = Halted
+isHalted chip = fst $ Halted chip
+
+export
+haltedReason : (chip : Chip8) -> String
+haltedReason chip = snd $ Halted chip
 
 export
 isWaiting : (chip : Chip8) -> Bool
