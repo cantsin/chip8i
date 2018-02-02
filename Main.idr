@@ -3,9 +3,7 @@ module Main
 import System
 import Data.Buffer
 import Effects
-import Effect.StdIO
 import Effect.Random
-import Effect.State
 
 import Constants
 import Opcodes
@@ -49,7 +47,6 @@ runChip8 chip =
     -- TODO: wait for user to press esc before exiting
     pure ()
   else
-    let mustReseed = Reseed chip in
     let mustWait = Waiting chip in
     -- The CPU runs at roughly 500Hz, however, we want to tick down the
     -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
@@ -58,7 +55,6 @@ runChip8 chip =
     let tick = counter `mod` 8 == 1 in
     do
       modifiedChip <- runOneCycle chip tick
-      -- TODO: if Reseed then generate new random #
       -- TODO: if Waiting then wait for user to press key
       runChip8 $ record { Counter $= (+ 1) } modifiedChip
       -- TODO when to draw screen?
@@ -68,6 +64,7 @@ main : IO ()
 main =
   do
     args <- getArgs
+    _ <- run $ srand 12345
     chip8 <- newChip8
     rom <- readROMFromFile $ getROMPath args
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress

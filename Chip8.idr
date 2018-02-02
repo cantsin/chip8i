@@ -22,9 +22,6 @@ record Chip8 where
   Counter : Integer
   Halted : Bool
   Waiting : Bool
-  -- keep track of the next random byte to use
-  RandomNumber : Bits8
-  Reseed : Bool
 
 export
 newChip8 : IO Chip8
@@ -34,8 +31,7 @@ newChip8 =
     case buf of
       Just ram =>
         let keys = MkKeypad $ Vect.replicate 16 0 in
-        -- TODO initialize random number
-        pure $ MkChip8 newCpu newScreen ram keys 0 False False 0x00 False
+        pure $ MkChip8 newCpu newScreen ram keys 0 False False
       Nothing =>
         do
           putStrLn "Not enough memory"

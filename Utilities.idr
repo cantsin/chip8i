@@ -114,6 +114,8 @@ extractMask0xfff value =
 
 export
 partial
-getRandomByte : () -> Eff Integer [RND]
+getRandomByte : () -> Eff Bits8 [RND]
 getRandomByte () =
-  rndInt 0x00 0xff
+  do
+    val <- rndInt 0x00 0xff
+    pure $ cast val

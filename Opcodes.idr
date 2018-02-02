@@ -1,5 +1,7 @@
 module Opcodes
 
+import Effects
+import Effect.Random
 import Data.Buffer
 import Data.Bits
 import Data.Fin
@@ -308,12 +310,12 @@ jumpRegister0 c addr =
 andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> IO Chip8
 andRandomValue chip r v =
   let c = Computer chip in
-  let rand = cast $ RandomNumber chip in
   let mask = cast v in
-  let value = cast $ rand `and` mask in
-  let cpu = setRegister c r value in
-  -- generate random number here?
-  pure $ record { Reseed = True, Computer = cpu } chip
+  do
+    rand <- run $ getRandomByte ()
+    value <- pure $ cast rand `and` mask
+    cpu <- pure $ setRegister c r $ cast value
+    pure $ record { Computer = cpu } chip
 
 -- special: modifies external state
 display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> IO Chip8
