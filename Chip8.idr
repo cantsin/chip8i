@@ -60,25 +60,29 @@ loadDefaultSpriteDataAt chip address =
         setByte buffer offset value
         pure $ offset + 1
 
+-- quite inefficient as well.
+build : {n : Nat} -> (f : Fin n -> IO a) -> IO (Vect n a)
+build {n = Z} f = pure []
+build {n = S _} f = do
+  first <- f 0
+  rest <- build (f . FS)
+  pure $ first :: rest
+
+readByte : (buffer : Buffer) -> (address : Int) -> (count : Fin n) -> IO Bits8
+readByte buffer address count =
+  let offset = cast $ finToNat count in
+  getByte buffer (address + offset)
+
 export
-loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect len Bits8)
-loadSpriteAt chip address n =
+loadSpriteAt : {len : Nat} -> (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect len Bits8)
+loadSpriteAt {len} chip address n =
   let ram = Ram chip in
-  let limit = cast $ finToNat n in
+  let limit : Int = cast $ finToNat n in
   do
-    spriteData <- readByte ram address limit (pure [])
+    spriteData <- build {n = len} (readByte ram address)
     putStrLn $ show limit
     putStrLn $ show spriteData
-    --pure $ fromList' Nil spriteData
-    ?hole
-  where
-    readByte : (buffer : Buffer) -> (offset : Int) -> (limit : Int) -> (accum : IO (List Bits8)) -> IO (List Bits8)
-    readByte buffer offset 0 accum = accum
-    readByte buffer offset limit accum =
-      do
-        val <- getByte buffer offset
-        current <- accum
-        readByte buffer (offset + 1) (limit - 1) (pure $ current ++ [val])
+    pure spriteData
 
 export
 getOpcode : (chip : Chip8) -> IO Bits16
