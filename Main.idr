@@ -2,8 +2,6 @@ module Main
 
 import System
 import Data.Buffer
-import Effects
-import Effect.Random
 
 import Constants
 import Opcodes
@@ -64,7 +62,6 @@ main : IO ()
 main =
   do
     args <- getArgs
-    _ <- run $ srand 12345
     chip8 <- newChip8
     rom <- readROMFromFile $ getROMPath args
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress

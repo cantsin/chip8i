@@ -2,6 +2,7 @@ module Opcodes
 
 import Effects
 import Effect.Random
+import Effect.System
 import Data.Buffer
 import Data.Bits
 import Data.Fin
@@ -306,13 +307,24 @@ jumpRegister0 c addr =
   let newAddress = addr + value in
   jumpDirect c newAddress
 
+-- this is a hack. we do not run effects in one block, so fake
+-- randomness by seeding with the CPU counter multiplied by the
+-- current time. Idris effects seem deprecated, anyhow.
+getRandomByte : (counter : Integer) -> Eff Bits8 [RND, SYSTEM]
+getRandomByte counter =
+  do
+    t <- time
+    srand $ t * counter
+    val <- rndInt 0x00 0xff
+    pure $ cast val
+
 -- special: modifies external state
 andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> IO Chip8
 andRandomValue chip r v =
   let c = Computer chip in
   let mask = cast v in
   do
-    rand <- run $ getRandomByte ()
+    rand <- run $ getRandomByte (Counter chip)
     value <- pure $ cast rand `and` mask
     cpu <- pure $ setRegister c r $ cast value
     pure $ record { Computer = cpu } chip

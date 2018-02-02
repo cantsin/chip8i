@@ -2,8 +2,6 @@ module Utilities
 
 import Data.Bits
 import Data.Fin
-import Effects
-import Effect.Random
 
 -- not sure why these casts are not included already. goes without
 -- saying that some conversions are potentially lossy.
@@ -111,11 +109,3 @@ extractMask0xfff value =
   let mask = intToBits 0x0fff in
   let result = and v mask in
   cast result
-
-export
-partial
-getRandomByte : () -> Eff Bits8 [RND]
-getRandomByte () =
-  do
-    val <- rndInt 0x00 0xff
-    pure $ cast val
