@@ -325,10 +325,10 @@ getRandomByte counter =
 -- special: modifies external state
 andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> IO Chip8
 andRandomValue chip r v =
-  let c = Computer chip in
+  let c = getComputer chip in
   let mask = cast v in
   do
-    rand <- run $ getRandomByte (Counter chip)
+    rand <- run $ getRandomByte (getCounter chip)
     value <- pure $ cast rand `and` mask
     cpu <- pure $ setRegister c r $ cast value
     pure $ record { Computer = cpu } chip
@@ -336,8 +336,8 @@ andRandomValue chip r v =
 -- special: modifies external state
 display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> IO Chip8
 display chip r1 r2 s =
-  let c = Computer chip in
-  let screen = Display chip in
+  let c = getComputer chip in
+  let screen = getDisplay chip in
   let x = cast $ getRegister c r1 in
   let y = cast $ getRegister c r2 in
   let loadingAddress = cast $ getRegisterI c in
@@ -401,39 +401,39 @@ updateCPU chip c =
 
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch chip ClearScreen                = pure $ clearScreen chip
-dispatch chip Return                     = updateCPU chip $ popStack (Computer chip)
-dispatch chip (Jump addr)                = updateCPU chip $ jumpDirect (Computer chip) addr
-dispatch chip (Call addr)                = updateCPU chip $ pushStack (Computer chip)
-dispatch chip (SkipIfEq r v)             = updateCPU chip $ skipIfRegisterEqual (Computer chip) r v
-dispatch chip (SkipIfNeq r v)            = updateCPU chip $ skipIfRegisterNotEqual (Computer chip) r v
-dispatch chip (SkipIfRegisterEq r1 r2)   = updateCPU chip $ skipIfRegistersEqual (Computer chip) r1 r2
-dispatch chip (LoadRegister r v)         = updateCPU chip $ setRegister (Computer chip) r v
-dispatch chip (AddRegister r v)          = updateCPU chip $ addRegisterDirect (Computer chip) r v
-dispatch chip (CopyRegister r1 r2)       = updateCPU chip $ copyRegisters (Computer chip) r1 r2
-dispatch chip (OrRegister r1 r2)         = updateCPU chip $ orRegister (Computer chip) r1 r2
-dispatch chip (AndRegister r1 r2)        = updateCPU chip $ andRegister (Computer chip) r1 r2
-dispatch chip (XorRegister r1 r2)        = updateCPU chip $ xorRegister (Computer chip) r1 r2
-dispatch chip (AddRegisterCarry r1 r2)   = updateCPU chip $ addRegisterCarry (Computer chip) r1 r2
-dispatch chip (SubRegister r1 r2)        = updateCPU chip $ subtractRegister (Computer chip) r1 r2
-dispatch chip (ShiftRightRegister r1 r2) = updateCPU chip $ shiftRightRegister (Computer chip) r1 r2
-dispatch chip (SubRegisterInverse r1 r2) = updateCPU chip $ subtractRegisterInverse (Computer chip) r1 r2
-dispatch chip (ShiftLeftRegister r1 r2)  = updateCPU chip $ shiftLeftRegister (Computer chip) r1 r2
-dispatch chip (SkipIfRegisterNeq r1 r2)  = updateCPU chip $ skipIfRegistersNotEqual (Computer chip) r1 r2
-dispatch chip (LoadRegisterI r)          = updateCPU chip $ setRegisterI (Computer chip) r
-dispatch chip (JumpRegister0 addr)       = updateCPU chip $ jumpRegister0 (Computer chip) addr
+dispatch chip Return                     = updateCPU chip $ popStack (getComputer chip)
+dispatch chip (Jump addr)                = updateCPU chip $ jumpDirect (getComputer chip) addr
+dispatch chip (Call addr)                = updateCPU chip $ pushStack (getComputer chip)
+dispatch chip (SkipIfEq r v)             = updateCPU chip $ skipIfRegisterEqual (getComputer chip) r v
+dispatch chip (SkipIfNeq r v)            = updateCPU chip $ skipIfRegisterNotEqual (getComputer chip) r v
+dispatch chip (SkipIfRegisterEq r1 r2)   = updateCPU chip $ skipIfRegistersEqual (getComputer chip) r1 r2
+dispatch chip (LoadRegister r v)         = updateCPU chip $ setRegister (getComputer chip) r v
+dispatch chip (AddRegister r v)          = updateCPU chip $ addRegisterDirect (getComputer chip) r v
+dispatch chip (CopyRegister r1 r2)       = updateCPU chip $ copyRegisters (getComputer chip) r1 r2
+dispatch chip (OrRegister r1 r2)         = updateCPU chip $ orRegister (getComputer chip) r1 r2
+dispatch chip (AndRegister r1 r2)        = updateCPU chip $ andRegister (getComputer chip) r1 r2
+dispatch chip (XorRegister r1 r2)        = updateCPU chip $ xorRegister (getComputer chip) r1 r2
+dispatch chip (AddRegisterCarry r1 r2)   = updateCPU chip $ addRegisterCarry (getComputer chip) r1 r2
+dispatch chip (SubRegister r1 r2)        = updateCPU chip $ subtractRegister (getComputer chip) r1 r2
+dispatch chip (ShiftRightRegister r1 r2) = updateCPU chip $ shiftRightRegister (getComputer chip) r1 r2
+dispatch chip (SubRegisterInverse r1 r2) = updateCPU chip $ subtractRegisterInverse (getComputer chip) r1 r2
+dispatch chip (ShiftLeftRegister r1 r2)  = updateCPU chip $ shiftLeftRegister (getComputer chip) r1 r2
+dispatch chip (SkipIfRegisterNeq r1 r2)  = updateCPU chip $ skipIfRegistersNotEqual (getComputer chip) r1 r2
+dispatch chip (LoadRegisterI r)          = updateCPU chip $ setRegisterI (getComputer chip) r
+dispatch chip (JumpRegister0 addr)       = updateCPU chip $ jumpRegister0 (getComputer chip) addr
 dispatch chip (Random r v)               = andRandomValue chip r v
 dispatch chip (Display r1 r2 s)          = display chip r1 r2 s
-dispatch chip (SkipIfKeyPressed r)       = updateCPU chip $ skipIfKeyPressed (Computer chip) r
-dispatch chip (SkipIfKeyNotPressed r)    = updateCPU chip $ skipIfKeyNotPressed (Computer chip) r
-dispatch chip (LoadRegisterDelay r)      = updateCPU chip $ loadRegisterDelay (Computer chip) r
-dispatch chip (WaitForKeyPress r)        = updateCPU chip $ waitForKeyPress (Computer chip) r
-dispatch chip (SetDelayFromRegister r)   = updateCPU chip $ setDelayFromRegister (Computer chip) r
-dispatch chip (SetSoundFromRegister r)   = updateCPU chip $ setSoundFromRegister (Computer chip) r
-dispatch chip (AddRegisterI r)           = updateCPU chip $ addRegisterI (Computer chip) r
-dispatch chip (LoadRegisterWithSprite r) = updateCPU chip $ loadRegisterWithSprite (Computer chip) r
-dispatch chip (StoreBCD r)               = updateCPU chip $ storeBCD (Computer chip) r
-dispatch chip (DumpRegisters r)          = updateCPU chip $ dumpRegisters (Computer chip) r
-dispatch chip (LoadRegisters r)          = updateCPU chip $ loadRegisters (Computer chip) r
+dispatch chip (SkipIfKeyPressed r)       = updateCPU chip $ skipIfKeyPressed (getComputer chip) r
+dispatch chip (SkipIfKeyNotPressed r)    = updateCPU chip $ skipIfKeyNotPressed (getComputer chip) r
+dispatch chip (LoadRegisterDelay r)      = updateCPU chip $ loadRegisterDelay (getComputer chip) r
+dispatch chip (WaitForKeyPress r)        = updateCPU chip $ waitForKeyPress (getComputer chip) r
+dispatch chip (SetDelayFromRegister r)   = updateCPU chip $ setDelayFromRegister (getComputer chip) r
+dispatch chip (SetSoundFromRegister r)   = updateCPU chip $ setSoundFromRegister (getComputer chip) r
+dispatch chip (AddRegisterI r)           = updateCPU chip $ addRegisterI (getComputer chip) r
+dispatch chip (LoadRegisterWithSprite r) = updateCPU chip $ loadRegisterWithSprite (getComputer chip) r
+dispatch chip (StoreBCD r)               = updateCPU chip $ storeBCD (getComputer chip) r
+dispatch chip (DumpRegisters r)          = updateCPU chip $ dumpRegisters (getComputer chip) r
+dispatch chip (LoadRegisters r)          = updateCPU chip $ loadRegisters (getComputer chip) r
 
 export
 runOneCycle : (chip : Chip8) -> (tick : Bool) -> IO Chip8
@@ -444,14 +444,14 @@ runOneCycle chip tick =
     case instruction of
       Invalid _ =>
         do
-          putStrLn $ (show $ Computer chip) ++ " => " ++ (show instruction)
+          putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
           putStrLn "Halted: unknown opcode"
           pure $ record { Halted = True } chip
       _ =>
         do
           -- debugging
-          putStrLn $ (show $ Display chip)
-          putStrLn $ (show $ Computer chip) ++ " => " ++ (show instruction)
+          putStrLn $ (show $ getDisplay chip)
+          putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
           modifiedChip <- dispatch chip instruction
-          modifiedComputer <- pure $ updateCPUState (Computer modifiedChip) tick
+          modifiedComputer <- pure $ updateCPUState (getComputer modifiedChip) tick
           pure $ record { Computer = modifiedComputer } modifiedChip

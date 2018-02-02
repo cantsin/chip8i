@@ -49,7 +49,7 @@ setPC c v =
 
 export
 getPC : (cpu : Cpu) -> Bits16
-getPC c = PC c
+getPC = PC
 
 export
 getRegister : (cpu : Cpu) -> (index : Fin 16) -> Bits8

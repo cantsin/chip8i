@@ -11,7 +11,6 @@ import Screen
 import Keypad
 import Cpu
 
-public -- TODO remove
 export
 record Chip8 where
   constructor MkChip8
@@ -36,6 +35,26 @@ newChip8 =
         do
           putStrLn "Not enough memory"
           System.exitFailure
+
+export
+getComputer : (chip : Chip8) -> Cpu
+getComputer = Computer
+
+export
+getDisplay : (chip : Chip8) -> Screen
+getDisplay = Display
+
+export
+getCounter : (chip : Chip8) -> Integer
+getCounter = Counter
+
+export
+isHalted : (chip : Chip8) -> Bool
+isHalted = Halted
+
+export
+isWaiting : (chip : Chip8) -> Bool
+isWaiting = Waiting
 
 export
 loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()

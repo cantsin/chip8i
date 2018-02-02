@@ -41,20 +41,20 @@ getROMPath args =
 partial
 runChip8 : (chip : Chip8) -> IO ()
 runChip8 chip =
-  if (Halted chip) then
+  if (isHalted chip) then
     -- TODO: wait for user to press esc before exiting
     pure ()
   else
-    let mustWait = Waiting chip in
+    let mustWait = isWaiting chip in
     -- The CPU runs at roughly 500Hz, however, we want to tick down the
     -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
     -- we tick down DT/ST every 8 CPU cycles.
-    let counter = Counter chip in
+    let counter = getCounter chip + 1 in
     let tick = counter `mod` 8 == 1 in
     do
       modifiedChip <- runOneCycle chip tick
       -- TODO: if Waiting then wait for user to press key
-      runChip8 $ record { Counter $= (+ 1) } modifiedChip
+      runChip8 $ record { Counter = counter } modifiedChip
       -- TODO when to draw screen?
 
 partial
