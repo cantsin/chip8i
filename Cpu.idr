@@ -52,6 +52,15 @@ getPC : (cpu : Cpu) -> Bits16
 getPC = PC
 
 export
+getRegisters : (cpu : Cpu) -> Vect 16 Bits8
+getRegisters = V
+
+export
+setRegisters : (cpu : Cpu) -> (registers : Vect 16 Bits8) -> Cpu
+setRegisters c registers =
+  record { V = registers } c
+
+export
 getRegister : (cpu : Cpu) -> (index : Fin 16) -> Bits8
 getRegister c i =
   Vect.index i (V c)

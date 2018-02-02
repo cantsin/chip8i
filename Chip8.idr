@@ -89,8 +89,8 @@ build {n = S _} f = do
   pure $ first :: rest
 
 export
-loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect (finToNat n) Bits8)
-loadSpriteAt chip address n =
+loadBlock : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect (finToNat n) Bits8)
+loadBlock chip address n =
   let ram = Ram chip in
   build {n = finToNat n} (readByte ram address)
   where

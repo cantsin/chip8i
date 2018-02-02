@@ -86,7 +86,7 @@ Show Register where
   show r = "V" ++ (show $ finToNat r)
 
 Show Opcode where
-  show (Invalid op)               = "??? "     ++ show op
+  show (Invalid op)               = "INVALID " ++ show op
   show ClearScreen                = "CLS"
   show Return                     = "RET"
   show (Jump a)                   = "JP "      ++ show a
@@ -346,7 +346,7 @@ display chip r1 r2 s =
   let y = cast $ getRegister c r2 in
   let loadingAddress = cast $ getRegisterI c in
   do
-    sprite <- loadSpriteAt chip loadingAddress s
+    sprite <- loadBlock chip loadingAddress s
     newDisplay <- pure $ writeSpriteToScreen screen sprite x y
     pure $ record { Display = newDisplay, Computer = incrementPC c } chip
 
@@ -396,13 +396,20 @@ storeBCD : (cpu : Cpu) -> (register : Register) -> Cpu
 storeBCD c r =
   ?storeBCD
 
-dumpRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
+dumpRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
 dumpRegisters c r =
   ?dumpRegisters
 
-loadRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
-loadRegisters c r =
-  ?loadRegisters
+loadRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
+loadRegisters chip r =
+  let c = getComputer chip in
+  let loadingAddress = cast $ getRegisterI c in
+  -- TODO use register value instead
+  let len : (Fin 17) = 16 in
+  do
+    registers <- loadBlock chip loadingAddress len
+    cpu <- pure $ setRegisters c registers
+    pure $ record { Computer = incrementPC cpu } chip
 
 -- convenience function for most opcodes
 updateCPU : (chip : Chip8) -> (cpu : Cpu) -> IO Chip8
@@ -442,8 +449,8 @@ dispatch chip (SetSoundFromRegister r)   = updateCPU chip $ setSoundFromRegister
 dispatch chip (AddRegisterI r)           = updateCPU chip $ addRegisterI (getComputer chip) r
 dispatch chip (LoadRegisterWithSprite r) = updateCPU chip $ loadRegisterWithSprite (getComputer chip) r
 dispatch chip (StoreBCD r)               = updateCPU chip $ storeBCD (getComputer chip) r
-dispatch chip (DumpRegisters r)          = updateCPU chip $ dumpRegisters (getComputer chip) r
-dispatch chip (LoadRegisters r)          = updateCPU chip $ loadRegisters (getComputer chip) r
+dispatch chip (DumpRegisters r)          = dumpRegisters chip r
+dispatch chip (LoadRegisters r)          = loadRegisters chip r
 
 export
 runOneCycle : (chip : Chip8) -> (tick : Bool) -> IO Chip8
@@ -453,9 +460,8 @@ runOneCycle chip tick =
     instruction <- pure $ extractOpcode opcodeValue
     case instruction of
       Invalid _ =>
-        do
-          putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
-          pure $ record { Halted = True, Error = "Unknown opcode" } chip
+        let errorMessage = "Unknown opcode: " ++ (show instruction) in
+        pure $ record { Halted = True, Error = errorMessage } chip
       _ =>
         do
           -- debugging
