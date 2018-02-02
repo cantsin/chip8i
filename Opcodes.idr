@@ -188,7 +188,7 @@ clearScreen chip =
 
 jumpDirect : (cpu : Cpu) -> (address : Address) -> Cpu
 jumpDirect c addr =
-  if (getPC c == (addr + 2)) then
+  if (getPC c == addr) then
     ?infiniteLoop
   else
     setPC c addr
