@@ -68,21 +68,16 @@ build {n = S _} f = do
   rest <- build (f . FS)
   pure $ first :: rest
 
-readByte : (buffer : Buffer) -> (address : Int) -> (count : Fin n) -> IO Bits8
-readByte buffer address count =
-  let offset = cast $ finToNat count in
-  getByte buffer (address + offset)
-
 export
-loadSpriteAt : {len : Nat} -> (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect len Bits8)
-loadSpriteAt {len} chip address n =
+loadSpriteAt : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect (finToNat n) Bits8)
+loadSpriteAt chip address n =
   let ram = Ram chip in
-  let limit : Int = cast $ finToNat n in
-  do
-    spriteData <- build {n = len} (readByte ram address)
-    putStrLn $ show limit
-    putStrLn $ show spriteData
-    pure spriteData
+  build {n = finToNat n} (readByte ram address)
+  where
+    readByte : (buffer : Buffer) -> (address : Int) -> (count : Fin index) -> IO Bits8
+    readByte buffer address count =
+      let offset = cast $ finToNat count in
+      getByte buffer (address + offset)
 
 export
 getOpcode : (chip : Chip8) -> IO Bits16
