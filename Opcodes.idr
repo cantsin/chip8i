@@ -190,6 +190,11 @@ clearScreen chip =
   let c = getComputer chip in
   record { Display = newScreen, Computer = incrementPC c } chip
 
+return : (chip8 : Chip8) -> Chip8
+return chip =
+  let c = getComputer chip in
+  record { Computer = popStack c } chip
+
 jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect chip addr =
   let c = getComputer chip in
@@ -394,14 +399,14 @@ loadRegisters : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisters c r =
   ?loadRegisters
 
--- convenience function: most opcodes only modify the CPU.
+-- convenience function for most opcodes
 updateCPU : (chip : Chip8) -> (cpu : Cpu) -> IO Chip8
 updateCPU chip c =
   pure $ record { Computer = incrementPC c } chip
 
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch chip ClearScreen                = pure $ clearScreen chip
-dispatch chip Return                     = updateCPU chip $ popStack (getComputer chip)
+dispatch chip Return                     = pure $ return chip
 dispatch chip (Jump addr)                = pure $ jumpDirect chip addr
 dispatch chip (Call addr)                = updateCPU chip $ pushStack (getComputer chip)
 dispatch chip (SkipIfEq r v)             = updateCPU chip $ skipIfRegisterEqual (getComputer chip) r v

@@ -95,9 +95,11 @@ popStack c =
   case index of
     FZ => idris_crash "Cpu: tried to pop from empty stack"
     FS n =>
+      let stack = Stack c in
       let newIndex = restrict 15 $ cast n in
-      let newStack = replaceAt index 0 (Stack c) in
-      record { SP = newIndex, Stack = newStack } c
+      let newPC = Vect.index index stack in
+      let newStack = replaceAt index 0 stack in
+      record { SP = newIndex, Stack = newStack, PC = newPC } c
 
 export
 delayTimerIsActive : (cpu : Cpu) -> Bool
