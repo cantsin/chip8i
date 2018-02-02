@@ -194,7 +194,11 @@ jumpDirect c addr =
   if (getPC c == addr) then
     ?infiniteLoop
   else
-    setPC c addr
+    let newAddress = the Int $ cast addr in
+    case newAddress of
+      0 => setPC c 0
+      1 => setPC c 0
+      n => setPC c $ cast $ newAddress - 2
 
 skipIfRegisterEqual : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 skipIfRegisterEqual c r v =
