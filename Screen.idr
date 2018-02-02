@@ -76,9 +76,30 @@ writePixelToScreen s p x y =
   let wasErased = pixelWasErased pixel p || WasErased s in
   record { WasErased = wasErased } newScreen
 
+explodeByte : (val : Bits8) -> Vect 8 Pixel
+explodeByte val =
+  let bits : Bits 8 = cast val in
+  let booleans = map (flip getBit bits) [0, 1, 2, 3, 4, 5, 6, 7] in
+  map convertPixel booleans
+  where
+    convertPixel : Bool -> Pixel
+    convertPixel True = On
+    convertPixel False = Off
+
+writeSpriteLineToScreen : (screen : Screen) -> (val : Bits8) -> (x : Int) -> (y : Int) -> Screen
+writeSpriteLineToScreen screen val x y =
+  let pixels = explodeByte val in
+  -- foldl (drawPixel y) screen pixels
+  -- where
+  --   drawPixel : (pixel : Pixel) -> (screen : Screen) -> Screen
+  --   drawPixel p s =
+  ?foo
+
 export
 writeSpriteToScreen : (screen : Screen) -> (sprite : Vect len Bits8) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteToScreen screen sprite x y =
+  -- for each index, decrement y
+  -- writePixelToScreen screen On x y
   -- ignore empty sprite
   ?writeSpriteToScreen
 
