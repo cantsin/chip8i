@@ -70,7 +70,7 @@ setRegisterFlag c v =
 
 export
 getRegisterI : (cpu : Cpu) -> Bits16
-getRegisterI c = I c
+getRegisterI = I
 
 export
 setRegisterI : (cpu : Cpu) -> (value : Bits16) -> Cpu
@@ -100,6 +100,20 @@ popStack c =
       let newPC = Vect.index index stack in
       let newStack = replaceAt index 0 stack in
       record { SP = newIndex, Stack = newStack, PC = newPC } c
+
+export
+getDelayTimer : (cpu : Cpu) -> Bits8
+getDelayTimer = DT
+
+export
+setDelayTimer : (cpu : Cpu) -> (countdown : Bits8) -> Cpu
+setDelayTimer c v =
+  record { DT = v } c
+
+export
+setSoundTimer : (cpu : Cpu) -> (countdown : Bits8) -> Cpu
+setSoundTimer c v =
+  record { ST = v } c
 
 export
 delayTimerIsActive : (cpu : Cpu) -> Bool

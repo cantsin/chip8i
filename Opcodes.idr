@@ -362,7 +362,8 @@ skipIfKeyNotPressed c r =
 
 loadRegisterDelay : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterDelay c r =
-  ?loadRegisterDelay
+  let countdown = getDelayTimer c in
+  setRegister c r countdown
 
 -- special: modifies external state
 -- TODO: may be problematic?
@@ -372,15 +373,20 @@ waitForKeyPress c r =
 
 setDelayFromRegister : (cpu : Cpu) -> (register : Register) -> Cpu
 setDelayFromRegister c r =
-  ?setDelayFromRegisteregister
+  let countdown = getRegister c r in
+  setDelayTimer c countdown
 
 setSoundFromRegister : (cpu : Cpu) -> (register : Register) -> Cpu
 setSoundFromRegister c r =
-  ?setSoundFromRegisteregister
+  let countdown = getRegister c r in
+  setSoundTimer c countdown
 
 addRegisterI : (cpu : Cpu) -> (register : Register) -> Cpu
 addRegisterI c r =
-  ?addRegisterI
+  let value = getRegister c r in
+  let currentI = getRegisterI c in
+  let newI = currentI + (cast value) in
+  setRegisterI c newI
 
 loadRegisterWithSprite : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterWithSprite c r =
@@ -453,8 +459,8 @@ runOneCycle chip tick =
       _ =>
         do
           -- debugging
-          putStrLn $ (show $ getDisplay chip)
-          putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
+          -- putStrLn $ (show $ getDisplay chip)
+          -- putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
           modifiedChip <- dispatch chip instruction
           modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
           pure $ record { Computer = modifiedComputer } modifiedChip
