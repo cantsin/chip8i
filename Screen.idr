@@ -89,19 +89,22 @@ explodeByte val =
 writeSpriteLineToScreen : (screen : Screen) -> (val : Bits8) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteLineToScreen screen val x y =
   let pixels = explodeByte val in
-  -- foldl (drawPixel y) screen pixels
-  -- where
-  --   drawPixel : (pixel : Pixel) -> (screen : Screen) -> Screen
-  --   drawPixel p s =
-  ?foo
+  fst $ foldl (drawPixel y) (MkPair screen x) pixels
+  where
+    drawPixel : (y : Int) -> (accum : (Screen, Int)) -> (pixel : Pixel) -> (Screen, Int)
+    drawPixel y (screen, x) p =
+      let newScreen = writePixelToScreen screen p x y in
+      MkPair newScreen (x + 1)
 
 export
 writeSpriteToScreen : (screen : Screen) -> (sprite : Vect len Bits8) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteToScreen screen sprite x y =
-  -- for each index, decrement y
-  -- writePixelToScreen screen On x y
-  -- ignore empty sprite
-  ?writeSpriteToScreen
+  fst $ foldl (drawLine x) (MkPair screen y) sprite
+  where
+    drawLine : (x : Int) -> (accum : (Screen, Int)) -> (val : Bits8) -> (Screen, Int)
+    drawLine x (screen, y) val =
+      let newScreen = writeSpriteLineToScreen screen val x y in
+      MkPair newScreen (y + 1)
 
 export
 defaultSpriteStartingAddress : Fin 16 -> Bits16
