@@ -199,8 +199,7 @@ jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect chip addr =
   let c = getComputer chip in
   if (getPC c == addr) then
-    -- TODO Error
-    record { Halted = (True, "Infinite loop") } chip
+    record { Halted = True, Error = "Infinite loop" } chip
   else
     record { Computer = setPC c addr } chip
 
@@ -450,7 +449,7 @@ runOneCycle chip tick =
       Invalid _ =>
         do
           putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
-          pure $ record { Halted = (True, "Unknown opcode") } chip
+          pure $ record { Halted = True, Error = "Unknown opcode" } chip
       _ =>
         do
           -- debugging

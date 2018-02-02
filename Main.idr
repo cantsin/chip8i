@@ -44,7 +44,7 @@ runChip8 chip =
   if (isHalted chip) then
     -- TODO: wait for user to press esc before exiting
     do
-      putStrLn $ "Chip8 halted: " ++ haltedReason chip
+      putStrLn $ "Chip8 halted. Reason: " ++ errorMessage chip
       pure ()
   else
     let mustWait = isWaiting chip in
