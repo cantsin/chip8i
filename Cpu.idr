@@ -52,13 +52,14 @@ getPC : (cpu : Cpu) -> Bits16
 getPC = PC
 
 export
-getRegisters : (cpu : Cpu) -> Vect 16 Bits8
-getRegisters = V
+getRegisters : (cpu : Cpu) -> (len : Fin 16) -> Vect (finToNat len) Bits8
+getRegisters c len =
+  ?get
 
 export
-setRegisters : (cpu : Cpu) -> (registers : Vect 16 Bits8) -> Cpu
-setRegisters c registers =
-  record { V = registers } c
+setRegisters : (cpu : Cpu) -> (len : Fin 16) -> (registers : Vect (finToNat len) Bits8) -> Cpu
+setRegisters c len registers =
+  ?set
 
 export
 getRegister : (cpu : Cpu) -> (index : Fin 16) -> Bits8

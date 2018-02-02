@@ -344,9 +344,9 @@ display chip r1 r2 s =
   let screen = getDisplay chip in
   let x = cast $ getRegister c r1 in
   let y = cast $ getRegister c r2 in
-  let loadingAddress = cast $ getRegisterI c in
+  let loadAddress = cast $ getRegisterI c in
   do
-    sprite <- loadBlock chip loadingAddress s
+    sprite <- loadBlock chip loadAddress s
     newDisplay <- pure $ writeSpriteToScreen screen sprite x y
     pure $ record { Display = newDisplay, Computer = incrementPC c } chip
 
@@ -397,18 +397,21 @@ storeBCD c r =
   ?storeBCD
 
 dumpRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
-dumpRegisters c r =
+dumpRegisters chip r =
+  let c = getComputer chip in
+  -- let dumpAddress = cast $ getRegisterI c in
+  -- dumpBlock chip dumpAddress
   ?dumpRegisters
 
 loadRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
 loadRegisters chip r =
   let c = getComputer chip in
-  let loadingAddress = cast $ getRegisterI c in
-  -- TODO use register value instead
-  let len : (Fin 17) = 16 in
+  let loadAddress = cast $ getRegisterI c in
+  let value : Int = cast $ getRegister c r in
+  let len = restrict 15 $ cast value in
   do
-    registers <- loadBlock chip loadingAddress len
-    cpu <- pure $ setRegisters c registers
+    registers <- loadBlock chip loadAddress len
+    cpu <- pure $ setRegisters c len registers
     pure $ record { Computer = incrementPC cpu } chip
 
 -- convenience function for most opcodes

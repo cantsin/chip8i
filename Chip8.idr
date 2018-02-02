@@ -67,11 +67,11 @@ loadROMAt chip rom address =
   Buffer.copyData rom 0 (Buffer.size rom) (Ram chip) address
 
 export
-loadDefaultSpriteDataAt : (chip : Chip8) -> (address : Int) -> IO Int
-loadDefaultSpriteDataAt chip address =
+dumpBlock : (chip : Chip8) -> (address : Int) -> (Vect len Bits8) -> IO Int
+dumpBlock chip address values =
   let ram = Ram chip in
   -- not aware of a faster way, this seems inefficient
-  foldl (writeByte ram) (pure address) defaultSpriteData
+  foldl (writeByte ram) (pure address) values
   where
     writeByte : (buffer : Buffer) -> (addr : IO Int) -> (value : Bits8) -> IO Int
     writeByte buffer addr value =
@@ -98,6 +98,11 @@ loadBlock chip address n =
     readByte buffer address count =
       let offset = cast $ finToNat count in
       getByte buffer (address + offset)
+
+export
+loadDefaultSpriteDataAt : (chip : Chip8) -> (address : Int) -> IO Int
+loadDefaultSpriteDataAt chip address =
+  dumpBlock chip address $ fromList defaultSpriteData
 
 export
 getOpcode : (chip : Chip8) -> IO Bits16
