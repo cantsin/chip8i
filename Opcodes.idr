@@ -256,7 +256,13 @@ xorRegister c r1 r2 =
 
 addRegisterCarry : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 addRegisterCarry c r1 r2 =
-  ?addregistercarry
+  let v1 : Bits16 = cast $ getRegister c r1 in
+  let v2 : Bits16 = cast $ getRegister c r2 in
+  let result : Bits16 = v1 + v2 in
+  let flag = if result > 0xff then 1 else 0 in
+  let masked = extractSecondByte result in
+  let newChip = setRegister c r1 masked in
+  setRegisterFlag newChip Flag
 
 subtractRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 subtractRegister c r1 r2 =
@@ -366,7 +372,6 @@ loadRegisterDelay c r =
   setRegister c r countdown
 
 -- special: modifies external state
--- TODO: may be problematic?
 waitForKeyPress : (cpu : Cpu) -> (register : Register) -> Cpu
 waitForKeyPress c r =
   ?waitForKeyPress
