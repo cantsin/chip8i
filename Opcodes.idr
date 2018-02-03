@@ -390,7 +390,10 @@ addRegisterI c r =
 
 loadRegisterWithSprite : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterWithSprite c r =
-  ?loadRegisterWithSprite
+  let v : Int = cast $ getRegister c r in
+  let index = restrict 15 $ cast v in
+  let address = defaultSpriteStartingAddress index in
+  setRegisterI c address
 
 storeBCD : (cpu : Cpu) -> (register : Register) -> Cpu
 storeBCD c r =
@@ -399,9 +402,13 @@ storeBCD c r =
 dumpRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
 dumpRegisters chip r =
   let c = getComputer chip in
-  -- let dumpAddress = cast $ getRegisterI c in
-  -- dumpBlock chip dumpAddress
-  ?dumpRegisters
+  let dumpAddress = cast $ getRegisterI c in
+  let value : Int = cast $ getRegister c r in
+  let len = restrict 15 $ cast value in
+  let registers = getRegisters c len in
+  do
+    dumpBlock chip dumpAddress registers
+    pure $ record { Computer = incrementPC c } chip
 
 loadRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
 loadRegisters chip r =
