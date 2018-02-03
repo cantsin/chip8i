@@ -324,6 +324,7 @@ jumpRegister0 chip addr =
 -- this is a hack. we do not run effects in one block, so fake
 -- randomness by seeding with the CPU counter multiplied by the
 -- current time. Idris effects seem deprecated, anyhow.
+partial
 getRandomByte : (counter : Integer) -> Eff Bits8 [RND, SYSTEM]
 getRandomByte counter =
   do
@@ -333,6 +334,7 @@ getRandomByte counter =
     pure $ cast val
 
 -- special: modifies external state
+partial
 andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> IO Chip8
 andRandomValue chip r v =
   let c = getComputer chip in
@@ -412,19 +414,18 @@ loadRegisterWithSprite c r =
   let address = defaultSpriteStartingAddress index in
   setRegisterI c address
 
--- TODO change to chip
-storeBCD : (cpu : Cpu) -> (register : Register) -> Cpu
-storeBCD c r =
-  -- let value = getRegister c r in
-  -- let dumpAddress = cast $ getRegisterI c in
-  -- div 100
-  -- mod 100, div 10
-  -- mod 10
-  -- create vector
-  -- do
-    -- dumpBlock chip dumpAddress registers
-    -- pure $ record { Computer = incrementPC c } chip
-  ?storeBCD
+storeBCD : (chip : Chip8) -> (register : Register) -> IO Chip8
+storeBCD chip r =
+  let c = getComputer chip in
+  let value = getRegister c r in
+  let dumpAddress = cast $ getRegisterI c in
+  let first = value `div` 100 in
+  let second = (value `mod` 100) `div` 10 in
+  let third = value `mod` 10 in
+  let digits = [first, second, third] in
+  do
+    dumpBlock chip dumpAddress digits
+    pure $ record { Computer = incrementPC c } chip
 
 dumpRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
 dumpRegisters chip r =
@@ -453,6 +454,7 @@ updateCPU : (chip : Chip8) -> (cpu : Cpu) -> IO Chip8
 updateCPU chip c =
   pure $ record { Computer = incrementPC c } chip
 
+partial
 dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
 dispatch chip ClearScreen                = pure $ clearScreen chip
 dispatch chip Return                     = pure $ return chip
@@ -485,10 +487,11 @@ dispatch chip (SetDelayFromRegister r)   = updateCPU chip $ setDelayFromRegister
 dispatch chip (SetSoundFromRegister r)   = updateCPU chip $ setSoundFromRegister (getComputer chip) r
 dispatch chip (AddRegisterI r)           = updateCPU chip $ addRegisterI (getComputer chip) r
 dispatch chip (LoadRegisterWithSprite r) = updateCPU chip $ loadRegisterWithSprite (getComputer chip) r
-dispatch chip (StoreBCD r)               = updateCPU chip $ storeBCD (getComputer chip) r
+dispatch chip (StoreBCD r)               = storeBCD chip r
 dispatch chip (DumpRegisters r)          = dumpRegisters chip r
 dispatch chip (LoadRegisters r)          = loadRegisters chip r
 
+partial
 export
 runOneCycle : (chip : Chip8) -> (tick : Bool) -> IO Chip8
 runOneCycle chip tick =
