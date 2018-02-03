@@ -79,7 +79,7 @@ writePixelToScreen s p x y =
 explodeByte : (val : Bits8) -> Vect 8 Pixel
 explodeByte val =
   let bits : Bits 8 = cast val in
-  let booleans = map (flip getBit bits) [0, 1, 2, 3, 4, 5, 6, 7] in
+  let booleans = map (flip getBit bits) [7, 6, 5, 4, 3, 2, 1, 0] in
   map convertPixel booleans
   where
     convertPixel : Bool -> Pixel
