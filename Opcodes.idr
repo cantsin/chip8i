@@ -262,7 +262,7 @@ addRegisterCarry c r1 r2 =
   let flag = if result > 0xff then 1 else 0 in
   let masked = extractSecondByte result in
   let newChip = setRegister c r1 masked in
-  setRegisterFlag newChip Flag
+  setRegisterFlag newChip flag
 
 subtractRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 subtractRegister c r1 r2 =
@@ -357,14 +357,26 @@ display chip r1 r2 s =
     pure $ record { Display = newDisplay, Computer = incrementPC c } chip
 
 -- special: accesses external state
-skipIfKeyPressed : (cpu : Cpu) -> (register : Register) -> Cpu
-skipIfKeyPressed c r =
-  ?skipIfKeyPressed
+skipIfKeyPressed : (chip : Chip8) -> (register : Register) -> Chip8
+skipIfKeyPressed chip r =
+  let c = getComputer chip in
+  let k = cast $ getRegister c r in
+  let pressed = isKeyPressed chip k in
+  if pressed then
+    record { Computer = incrementPC $ incrementPC c } chip
+  else
+    record { Computer = incrementPC c } chip
 
 -- special: accesses external state
-skipIfKeyNotPressed : (cpu : Cpu) -> (register : Register) -> Cpu
-skipIfKeyNotPressed c r =
-  ?skipIfKeyNotPressed
+skipIfKeyNotPressed : (chip8 : Chip8) -> (register : Register) -> Chip8
+skipIfKeyNotPressed chip r =
+  let c = getComputer chip in
+  let k = cast $ getRegister c r in
+  let pressed = isKeyPressed chip k in
+  if pressed then
+    record { Computer = incrementPC c } chip
+  else
+    record { Computer = incrementPC $ incrementPC c } chip
 
 loadRegisterDelay : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterDelay c r =
@@ -400,8 +412,18 @@ loadRegisterWithSprite c r =
   let address = defaultSpriteStartingAddress index in
   setRegisterI c address
 
+-- TODO change to chip
 storeBCD : (cpu : Cpu) -> (register : Register) -> Cpu
 storeBCD c r =
+  -- let value = getRegister c r in
+  -- let dumpAddress = cast $ getRegisterI c in
+  -- div 100
+  -- mod 100, div 10
+  -- mod 10
+  -- create vector
+  -- do
+    -- dumpBlock chip dumpAddress registers
+    -- pure $ record { Computer = incrementPC c } chip
   ?storeBCD
 
 dumpRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
@@ -455,8 +477,8 @@ dispatch chip (LoadRegisterI r)          = updateCPU chip $ setRegisterI (getCom
 dispatch chip (JumpRegister0 addr)       = pure $ jumpRegister0 chip addr
 dispatch chip (Random r v)               = andRandomValue chip r v
 dispatch chip (Display r1 r2 s)          = display chip r1 r2 s
-dispatch chip (SkipIfKeyPressed r)       = updateCPU chip $ skipIfKeyPressed (getComputer chip) r
-dispatch chip (SkipIfKeyNotPressed r)    = updateCPU chip $ skipIfKeyNotPressed (getComputer chip) r
+dispatch chip (SkipIfKeyPressed r)       = pure $ skipIfKeyPressed chip r
+dispatch chip (SkipIfKeyNotPressed r)    = pure $ skipIfKeyNotPressed chip r
 dispatch chip (LoadRegisterDelay r)      = updateCPU chip $ loadRegisterDelay (getComputer chip) r
 dispatch chip (WaitForKeyPress r)        = updateCPU chip $ waitForKeyPress (getComputer chip) r
 dispatch chip (SetDelayFromRegister r)   = updateCPU chip $ setDelayFromRegister (getComputer chip) r

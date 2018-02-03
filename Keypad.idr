@@ -6,7 +6,11 @@ export
 record Keypad where
   constructor MkKeypad
   -- 16 key hexadecimal keypad
-  K : Vect 16 Bits8
+  K : Vect 16 Bool
+
+export
+isKeyPressed : (keypad : Keypad) -> (n : Fin 16) -> Bool
+isKeyPressed keypad n = Vect.index n (K keypad)
 
 -- layout
 

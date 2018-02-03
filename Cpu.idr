@@ -52,23 +52,26 @@ getPC : (cpu : Cpu) -> Bits16
 getPC = PC
 
 export
-getRegisters : (cpu : Cpu) -> (len : Fin 16) -> Vect (finToNat len) Bits8
-getRegisters c len =
-  let registers = V c in
-  Vect.take (finToNat len) registers
+getRegisters : {n : Nat} -> (cpu : Cpu) -> (len : Fin n) -> Vect n Bits8
+getRegisters {n} c len =
+  -- let m = minus 16 n in
+  -- let registers : Vect (n + m) Bits8 = V c in
+  -- Vect.take n registers
+  ?get
 
 export
 setRegisters : (cpu : Cpu) -> (len : Fin 16) -> (registers : Vect (finToNat len) Bits8) -> Cpu
 setRegisters c len registers =
-  let currentRegisters = V c in
-  let tail = Vect.drop (finToNat len) currentRegisters in
-  let newRegisters = registers ++ tail in
-  record { V = newRegisters } c
+  ?set
+  -- let currentRegisters = V c in
+  -- let tail = Vect.drop (finToNat len) currentRegisters in
+  -- let newRegisters = registers ++ tail in
+  -- record { V = newRegisters } c
 
 export
 getRegister : (cpu : Cpu) -> (index : Fin 16) -> Bits8
 getRegister c i =
-  Vect.index i (V c)
+  Vect.index i $ V c
 
 export
 setRegister : (cpu : Cpu) -> (index : Fin 16) -> (value : Bits8) -> Cpu

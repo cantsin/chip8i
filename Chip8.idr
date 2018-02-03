@@ -30,7 +30,7 @@ newChip8 =
     buf <- Buffer.newBuffer RamSize
     case buf of
       Just ram =>
-        let keys = MkKeypad $ Vect.replicate 16 0 in
+        let keys = MkKeypad $ Vect.replicate 16 False in
         pure $ MkChip8 newCpu newScreen ram keys 0 False False "No error"
       Nothing =>
         do
@@ -60,6 +60,10 @@ errorMessage = Error
 export
 isWaiting : (chip : Chip8) -> Bool
 isWaiting = Waiting
+
+export
+isKeyPressed : (chip : Chip8) -> (n : Fin 16) -> Bool
+isKeyPressed chip n = isKeyPressed (Keys chip) n
 
 export
 loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
