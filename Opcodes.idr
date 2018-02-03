@@ -386,9 +386,13 @@ loadRegisterDelay c r =
   setRegister c r countdown
 
 -- special: modifies external state
-waitForKeyPress : (cpu : Cpu) -> (register : Register) -> Cpu
-waitForKeyPress c r =
-  ?waitForKeyPress
+waitForKeyPress : (chip : Chip8) -> (register : Register) -> IO Chip8
+waitForKeyPress chip r =
+  let c = getComputer chip in
+  let k = ?waitForKeyPress chip in
+  let cpu = setRegister c r k in
+  do
+    pure $ record { Computer = incrementPC cpu } chip
 
 setDelayFromRegister : (cpu : Cpu) -> (register : Register) -> Cpu
 setDelayFromRegister c r =
@@ -414,6 +418,7 @@ loadRegisterWithSprite c r =
   let address = defaultSpriteStartingAddress index in
   setRegisterI c address
 
+partial
 storeBCD : (chip : Chip8) -> (register : Register) -> IO Chip8
 storeBCD chip r =
   let c = getComputer chip in
@@ -482,7 +487,7 @@ dispatch chip (Display r1 r2 s)          = display chip r1 r2 s
 dispatch chip (SkipIfKeyPressed r)       = pure $ skipIfKeyPressed chip r
 dispatch chip (SkipIfKeyNotPressed r)    = pure $ skipIfKeyNotPressed chip r
 dispatch chip (LoadRegisterDelay r)      = updateCPU chip $ loadRegisterDelay (getComputer chip) r
-dispatch chip (WaitForKeyPress r)        = updateCPU chip $ waitForKeyPress (getComputer chip) r
+dispatch chip (WaitForKeyPress r)        = waitForKeyPress chip r
 dispatch chip (SetDelayFromRegister r)   = updateCPU chip $ setDelayFromRegister (getComputer chip) r
 dispatch chip (SetSoundFromRegister r)   = updateCPU chip $ setSoundFromRegister (getComputer chip) r
 dispatch chip (AddRegisterI r)           = updateCPU chip $ addRegisterI (getComputer chip) r
@@ -491,8 +496,8 @@ dispatch chip (StoreBCD r)               = storeBCD chip r
 dispatch chip (DumpRegisters r)          = dumpRegisters chip r
 dispatch chip (LoadRegisters r)          = loadRegisters chip r
 
-partial
 export
+partial
 runOneCycle : (chip : Chip8) -> (tick : Bool) -> IO Chip8
 runOneCycle chip tick =
   do
@@ -505,8 +510,8 @@ runOneCycle chip tick =
       _ =>
         do
           -- debugging
-          -- putStrLn $ (show $ getDisplay chip)
-          -- putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
+          putStrLn $ (show $ getDisplay chip)
+          putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
           modifiedChip <- dispatch chip instruction
           modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
           pure $ record { Computer = modifiedComputer } modifiedChip
