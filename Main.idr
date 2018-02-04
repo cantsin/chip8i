@@ -4,12 +4,20 @@ import System
 import Data.Buffer
 import Effects
 import Effect.SDL
+import Effect.State
+import Effect.StdIO
+import Effect.Random
 
 import Constants
 import Opcodes
+import Keypad
 import Chip8
 
 %default total
+
+-- Effects: support SDL, state, random number generation, and console I/O.
+State : Type -> Type -> Type
+State i t = { [SDL i, Chip8 ::: STATE Chip8, RND, STDIO] } Effects.DepEff.Eff t
 
 defaultROM : String
 defaultROM = "./roms/maze.rom"
@@ -61,20 +69,42 @@ runChip8 chip =
       runChip8 $ record { Counter = counter } modifiedChip
       -- TODO when to draw screen?
 
-SDLEffect : Type -> Type -> Type
-SDLEffect i t = { [SDL i] } Eff t
+GS : Type -> Type
+GS t = { [Chip8 ::: STATE Chip8] } Eff t
+
+-- SDL
+process : Maybe Event -> GS Bool
+process (Just AppQuit) = pure False
+-- process (Just (KeyDown KeyLeftArrow))  = do xmove (-2); pure True
+-- process (Just (KeyUp KeyLeftArrow))    = do xmove 0; pure True
+-- process (Just (KeyDown KeyRightArrow)) = do xmove 2; pure True
+-- process (Just (KeyUp KeyRightArrow))   = do xmove 0; pure True
+-- process (Just (KeyDown KeyUpArrow))    = do ymove (-2); pure True
+-- process (Just (KeyUp KeyUpArrow))      = do ymove 0; pure True
+-- process (Just (KeyDown KeyDownArrow))  = do ymove 2; pure True
+-- process (Just (KeyUp KeyDownArrow))    = do ymove 0; pure True
+-- process (Just (KeyDown KeySpace))      = do addBullet; pure True
+process _ = pure True
 
 Running : Type -> Type
-Running t = SDLEffect SDLSurface t
+Running t = State SDLSurface t
 
+eventLoop : Running ()
+eventLoop =
+  do
+    -- runChip8
+    -- draw screen
+    -- delay
+    when !(process !poll) eventLoop
 
 partial
 main : IO ()
 main =
   do
     args <- getArgs
-    chip8 <- newChip8
     rom <- readROMFromFile $ getROMPath args
+    -- initialise (64 * scale) (32 * scale)
+    chip8 <- newChip8
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
     runChip8 chip8

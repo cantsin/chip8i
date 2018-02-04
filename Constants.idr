@@ -17,3 +17,7 @@ DefaultSpriteDataAddress = 0x100
 export
 DefaultSpriteDataLength : Int
 DefaultSpriteDataLength = 5
+
+export
+scale : Integer
+scale = 4

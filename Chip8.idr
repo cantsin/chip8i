@@ -4,6 +4,8 @@ import System
 import Data.Bits
 import Data.Buffer
 import Data.Vect
+import Effects
+import Effect.SDL
 
 import Utilities
 import Constants
