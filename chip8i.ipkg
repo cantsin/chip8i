@@ -1,5 +1,8 @@
 package chip8i
 
-modules = Main
+modules = Constants Utilities Chip8 Cpu Keypad Opcodes Screen Main
 
-opts = "-p effects"
+opts = "-p effects -p sdl --warnreach"
+
+executable = chip8i
+main = Main

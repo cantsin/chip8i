@@ -2,6 +2,8 @@ module Main
 
 import System
 import Data.Buffer
+import Effects
+import Effect.SDL
 
 import Constants
 import Opcodes
@@ -58,6 +60,13 @@ runChip8 chip =
       -- TODO: if Waiting then wait for user to press key
       runChip8 $ record { Counter = counter } modifiedChip
       -- TODO when to draw screen?
+
+SDLEffect : Type -> Type -> Type
+SDLEffect i t = { [SDL i] } Eff t
+
+Running : Type -> Type
+Running t = SDLEffect SDLSurface t
+
 
 partial
 main : IO ()
