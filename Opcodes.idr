@@ -510,8 +510,8 @@ runOneCycle chip tick =
       _ =>
         do
           -- debugging
-          putStrLn $ (show $ getDisplay chip)
-          putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
+          -- putStrLn $ (show $ getDisplay chip)
+          -- putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
           modifiedChip <- dispatch chip instruction
           modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
           pure $ record { Computer = modifiedComputer } modifiedChip

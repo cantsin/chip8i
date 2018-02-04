@@ -19,5 +19,9 @@ DefaultSpriteDataLength : Int
 DefaultSpriteDataLength = 5
 
 export
-scale : Integer
-scale = 4
+RandomSeed : Integer
+RandomSeed = 1234567890
+
+export
+Scale : Int
+Scale = 4

@@ -49,13 +49,13 @@ getROMPath args =
     Just path => path
 
 partial
-runChip8 : (chip : Chip8) -> IO ()
+runChip8 : (chip : Chip8) -> IO (Chip8)
 runChip8 chip =
   if (isHalted chip) then
     -- TODO: wait for user to press esc before exiting
     do
       putStrLn $ "Chip8 halted. Reason: " ++ errorMessage chip
-      pure ()
+      pure chip
   else
     let mustWait = isWaiting chip in
     -- The CPU runs at roughly 500Hz, however, we want to tick down the
@@ -65,8 +65,9 @@ runChip8 chip =
     let tick = counter `mod` 8 == 1 in
     do
       modifiedChip <- runOneCycle chip tick
+      pure $ record { Counter = counter } modifiedChip
       -- TODO: if Waiting then wait for user to press key
-      runChip8 $ record { Counter = counter } modifiedChip
+      -- runChip8 $
       -- TODO when to draw screen?
 
 GS : Type -> Type
@@ -75,6 +76,7 @@ GS t = { [Chip8 ::: STATE Chip8] } Eff t
 -- SDL
 process : Maybe Event -> GS Bool
 process (Just AppQuit) = pure False
+process (Just (KeyDown KeyEsc)) = pure False
 -- process (Just (KeyDown KeyLeftArrow))  = do xmove (-2); pure True
 -- process (Just (KeyUp KeyLeftArrow))    = do xmove 0; pure True
 -- process (Just (KeyDown KeyRightArrow)) = do xmove 2; pure True
@@ -89,13 +91,27 @@ process _ = pure True
 Running : Type -> Type
 Running t = State SDLSurface t
 
+partial
 eventLoop : Running ()
 eventLoop =
   do
-    -- runChip8
-    -- draw screen
+    chip <- Chip8 :- get
+    -- runChip8 chip
+    -- drawScreen (getDisplay chip)
+    -- 480 times per second, means 2ms each
     -- delay
     when !(process !poll) eventLoop
+
+-- runChip8 chip8
+
+partial
+kickoff : State () ()
+kickoff =
+  do
+    initialise (64 * Scale) (32 * Scale)
+    eventLoop
+    quit
+    putStrLn "Fin."
 
 partial
 main : IO ()
@@ -103,9 +119,7 @@ main =
   do
     args <- getArgs
     rom <- readROMFromFile $ getROMPath args
-    -- initialise (64 * scale) (32 * scale)
     chip8 <- newChip8
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
-    runChip8 chip8
-    putStrLn "Fin."
+    runInit [(), Chip8 := chip8, RandomSeed, ()] kickoff
