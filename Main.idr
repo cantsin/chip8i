@@ -6,6 +6,7 @@ import Effects
 import Effect.SDL
 import Effect.State
 import Effect.StdIO
+import Effect.System
 import Effect.Random
 
 import Constants
@@ -15,9 +16,10 @@ import Chip8
 
 %default total
 
--- Effects: support SDL, state, random number generation, and console I/O.
+-- Effects: support SDL, chip8 state, random number generation,
+-- console I/O, and system interaction.
 State : Type -> Type -> Type
-State i t = { [SDL i, Chip8 ::: STATE Chip8, RND, STDIO] } Effects.DepEff.Eff t
+State i t = { [ SDL i, Chip8 ::: STATE Chip8, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
 
 defaultROM : String
 defaultROM = "./roms/maze.rom"
@@ -98,11 +100,8 @@ eventLoop =
     chip <- Chip8 :- get
     -- runChip8 chip
     -- drawScreen (getDisplay chip)
-    -- 480 times per second, means 2ms each
-    -- delay
+    usleep 2083 -- update ~480 times per second
     when !(process !poll) eventLoop
-
--- runChip8 chip8
 
 partial
 kickoff : State () ()
@@ -122,4 +121,4 @@ main =
     chip8 <- newChip8
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
-    runInit [(), Chip8 := chip8, RandomSeed, ()] kickoff
+    runInit [(), Chip8 := chip8, RandomSeed, (), ()] kickoff
