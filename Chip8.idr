@@ -2,16 +2,25 @@ module Chip8
 
 import System
 import Data.Bits
+import Data.Fin
 import Data.Buffer
 import Data.Vect
 import Effects
-import Effect.SDL
+import Effect.State
 
 import Utilities
 import Constants
 import Screen
 import Keypad
 import Cpu
+import Ram
+
+public
+export
+data Chip8State =
+  Active
+  | WaitingForKey (Fin 16)
+  | Halted String
 
 export
 record Chip8 where
@@ -20,10 +29,8 @@ record Chip8 where
   Display : Screen
   Ram : Buffer -- 4kb RAM
   Keys : Keypad
-  Counter : Integer
-  Halted : Bool
-  Waiting : Bool
-  Error : String
+  Counter : Integer -- TODO pull out?
+  State : Chip8State -- TODO pull out?
 
 export
 newChip8 : IO Chip8
@@ -33,7 +40,7 @@ newChip8 =
     case buf of
       Just ram =>
         let keys = MkKeypad $ Vect.replicate 16 False in
-        pure $ MkChip8 newCpu newScreen ram keys 0 False False "No error"
+        pure $ MkChip8 newCpu newScreen ram keys 0 Active
       Nothing =>
         do
           putStrLn "Not enough memory"
@@ -52,16 +59,8 @@ getCounter : (chip : Chip8) -> Integer
 getCounter = Counter
 
 export
-isHalted : (chip : Chip8) -> Bool
-isHalted = Halted
-
-export
-errorMessage : (chip : Chip8) -> String
-errorMessage = Error
-
-export
-isWaiting : (chip : Chip8) -> Bool
-isWaiting = Waiting
+getState : (chip : Chip8) -> Chip8State
+getState = State
 
 export
 isKeyPressed : (chip : Chip8) -> (n : Fin 16) -> Bool
@@ -83,7 +82,7 @@ dumpBlock chip address values =
     writeByte buffer addr value =
       do
         offset <- addr
-        setByte buffer offset value
+        Buffer.setByte buffer offset value
         pure $ offset + 1
 
 -- quite inefficient as well.
@@ -103,7 +102,7 @@ loadBlock chip address n =
     readByte : (buffer : Buffer) -> (address : Int) -> (count : Fin index) -> IO Bits8
     readByte buffer address count =
       let offset = cast $ finToNat count in
-      getByte buffer (address + offset)
+      Buffer.getByte buffer (address + offset)
 
 export
 loadDefaultSpriteDataAt : (chip : Chip8) -> (address : Int) -> IO Int

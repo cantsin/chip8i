@@ -2,6 +2,8 @@ module Opcodes
 
 import Effects
 import Effect.Random
+import Effect.State
+import Effect.StdIO
 import Effect.System
 import Data.Buffer
 import Data.Bits
@@ -199,7 +201,7 @@ jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect chip addr =
   let c = getComputer chip in
   if (getPC c == addr) then
-    record { Halted = True, Error = "Infinite loop" } chip
+    record { State = Halted "Infinite loop" } chip
   else
     record { Computer = setPC c addr } chip
 
@@ -498,20 +500,21 @@ dispatch chip (LoadRegisters r)          = loadRegisters chip r
 
 export
 partial
-runOneCycle : (chip : Chip8) -> (tick : Bool) -> IO Chip8
+runOneCycle : (chip : Chip8) -> (tick : Bool) -> { [Chip8 ::: STATE Chip8, STDIO] } Effects.DepEff.Eff ()
 runOneCycle chip tick =
   do
-    opcodeValue <- getOpcode chip
-    instruction <- pure $ extractOpcode opcodeValue
-    case instruction of
-      Invalid _ =>
-        let errorMessage = "Unknown opcode: " ++ (show instruction) in
-        pure $ record { Halted = True, Error = errorMessage } chip
-      _ =>
-        do
-          -- debugging
-          -- putStrLn $ (show $ getDisplay chip)
-          -- putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
-          modifiedChip <- dispatch chip instruction
-          modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
-          pure $ record { Computer = modifiedComputer } modifiedChip
+    -- opcodeValue <- getOpcode chip
+    ?test
+    -- instruction <- pure $ extractOpcode opcodeValue
+    -- case instruction of
+    --   Invalid _ =>
+    --     let errorMessage = "Unknown opcode: " ++ (show instruction) in
+    --     Chip8 :- put $ record { State = Halted errorMessage } chip
+    --   _ =>
+    --     do
+    --       -- debugging
+    --       -- putStrLn $ (show $ getDisplay chip)
+    --       -- putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
+    --       modifiedChip <- dispatch chip instruction
+    --       modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
+    --       Chip8 :- put $ record { Computer = modifiedComputer } modifiedChip

@@ -2,6 +2,7 @@ module Main
 
 import System
 import Data.Buffer
+import Data.Fin
 import Effects
 import Effect.SDL
 import Effect.State
@@ -51,33 +52,29 @@ getROMPath args =
     Just path => path
 
 partial
-runChip8 : (chip : Chip8) -> IO (Chip8)
+runChip8 : (chip : Chip8) -> { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
 runChip8 chip =
-  if (isHalted chip) then
-    -- TODO: wait for user to press esc before exiting
-    do
-      putStrLn $ "Chip8 halted. Reason: " ++ errorMessage chip
-      pure chip
-  else
-    let mustWait = isWaiting chip in
-    -- The CPU runs at roughly 500Hz, however, we want to tick down the
-    -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
-    -- we tick down DT/ST every 8 CPU cycles.
-    let counter = getCounter chip + 1 in
-    let tick = counter `mod` 8 == 1 in
-    do
-      modifiedChip <- runOneCycle chip tick
-      pure $ record { Counter = counter } modifiedChip
-      -- TODO: if Waiting then wait for user to press key
-      -- runChip8 $
-      -- TODO when to draw screen?
+  case getState chip of
+    Halted _ => pure ()
+    WaitingForKey _ => pure ()
+    Active =>
+      -- The CPU runs at roughly 500Hz, however, we want to tick down the
+      -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
+      -- we tick down DT/ST every 8 CPU cycles.
+      let counter = getCounter chip + 1 in
+      let tick = counter `mod` 8 == 1 in
+      do
+        -- modifiedChip <- runOneCycle chip tick
+        -- Chip8 :- put $ record { Counter = counter } modifiedChip
+        pure ()
 
-GS : Type -> Type
-GS t = { [Chip8 ::: STATE Chip8] } Eff t
+Chip8Effect : Type -> Type
+Chip8Effect t = { [Chip8 ::: STATE Chip8] } Eff t
 
 -- SDL
-process : Maybe Event -> GS Bool
+process : Maybe Event -> Chip8Effect Bool
 process (Just AppQuit) = pure False
+-- TODO if halted, putStrLn $ "Chip8 halted. Reason: " ++ errorMessage chip
 process (Just (KeyDown KeyEsc)) = pure False
 -- process (Just (KeyDown KeyLeftArrow))  = do xmove (-2); pure True
 -- process (Just (KeyUp KeyLeftArrow))    = do xmove 0; pure True
@@ -94,21 +91,21 @@ Running : Type -> Type
 Running t = State SDLSurface t
 
 partial
-eventLoop : Running ()
-eventLoop =
+runChip8Loop : Running ()
+runChip8Loop =
   do
     chip <- Chip8 :- get
-    -- runChip8 chip
+    runChip8 chip
     -- drawScreen (getDisplay chip)
     usleep 2083 -- update ~480 times per second
-    when !(process !poll) eventLoop
+    when !(process !poll) runChip8Loop
 
 partial
 kickoff : State () ()
 kickoff =
   do
     initialise (64 * Scale) (32 * Scale)
-    eventLoop
+    runChip8Loop
     quit
     putStrLn "Fin."
 
