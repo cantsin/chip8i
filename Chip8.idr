@@ -13,7 +13,6 @@ import Constants
 import Screen
 import Keypad
 import Cpu
-import Ram
 
 public
 export
@@ -59,8 +58,19 @@ getCounter : (chip : Chip8) -> Integer
 getCounter = Counter
 
 export
+getKeypad : (chip : Chip8) -> Keypad
+getKeypad = Keys
+
+export
 getState : (chip : Chip8) -> Chip8State
 getState = State
+
+export
+isHalted : (chip : Chip8) -> Maybe String
+isHalted chip =
+  case getState chip of
+    Halted error => Just error
+    _ => Nothing
 
 export
 isKeyPressed : (chip : Chip8) -> (n : Fin 16) -> Bool

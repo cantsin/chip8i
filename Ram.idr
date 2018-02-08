@@ -28,3 +28,7 @@ Handler Ram IO where
     do
       Buffer.copyData buf start len dest loc
       k () ()
+
+export
+RAM : Type -> EFFECT
+RAM t = MkEff t Ram

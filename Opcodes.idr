@@ -263,8 +263,8 @@ addRegisterCarry c r1 r2 =
   let result : Bits16 = v1 + v2 in
   let flag = if result > 0xff then 1 else 0 in
   let masked = extractSecondByte result in
-  let newChip = setRegister c r1 masked in
-  setRegisterFlag newChip flag
+  let cpu = setRegister c r1 masked in
+  setRegisterFlag cpu flag
 
 subtractRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 subtractRegister c r1 r2 =
@@ -272,8 +272,8 @@ subtractRegister c r1 r2 =
   let v2 : Int = cast $ getRegister c r2 in
   let result = cast (v1 - v2) in
   let flag = if v1 > v2 then 1 else 0 in
-  let newChip = setRegister c r1 result in
-  setRegisterFlag newChip flag
+  let cpu = setRegister c r1 result in
+  setRegisterFlag cpu flag
 
 shiftRightRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 shiftRightRegister c r _ =
@@ -281,8 +281,8 @@ shiftRightRegister c r _ =
   let one = intToBits 0x1 in
   let result = cast $ bitsToInt (v `shiftRightLogical` one) in
   let flag = cast $ bitsToInt (v `and` one) in
-  let newChip = setRegister c r result in
-  setRegisterFlag newChip flag
+  let cpu = setRegister c r result in
+  setRegisterFlag cpu flag
 
 subtractRegisterInverse : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 subtractRegisterInverse c r1 r2 =
@@ -290,8 +290,8 @@ subtractRegisterInverse c r1 r2 =
   let v2 : Int = cast $ getRegister c r2 in
   let result = cast (v2 - v1) in
   let flag = if v2 > v1 then 1 else 0 in
-  let newChip = setRegister c r1 result in
-  setRegisterFlag newChip flag
+  let cpu = setRegister c r1 result in
+  setRegisterFlag cpu flag
 
 shiftLeftRegister : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 shiftLeftRegister c r _ =
@@ -299,8 +299,8 @@ shiftLeftRegister c r _ =
   let one = intToBits 0x1 in
   let result = cast $ bitsToInt ((cast v) `shiftLeft` one) in
   let flag = if v > 0x7f then 1 else 0 in
-  let newChip = setRegister c r result in
-  setRegisterFlag newChip flag
+  let cpu = setRegister c r result in
+  setRegisterFlag cpu flag
 
 skipIfRegistersNotEqual : (cpu : Cpu) -> (register : Register) -> (register : Register) -> Cpu
 skipIfRegistersNotEqual c r1 r2 =

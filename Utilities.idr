@@ -51,6 +51,12 @@ Cast Bits8 (Fin 16) where
       Just f => f
       Nothing => idris_crash "value exceeded bounds" -- sad face
 
+export
+Cast (Fin 16) Bits8 where
+  cast x =
+    let value: Int = cast $ finToNat x in
+    cast value
+
 Cast Bits16 (Bits 16) where
   cast x =
     let asInt: Int = cast x in

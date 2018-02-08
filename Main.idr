@@ -12,15 +12,17 @@ import Effect.Random
 
 import Constants
 import Opcodes
+import Keybindings
 import Keypad
 import Chip8
+import Ram
 
 %default total
 
--- Effects: support SDL, chip8 state, random number generation,
--- console I/O, and system interaction.
+-- Effects: support SDL, chip8 state, RAM (buffer I/O), random number
+-- generation, console I/O, and system interaction.
 State : Type -> Type -> Type
-State i t = { [ SDL i, Chip8 ::: STATE Chip8, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
+State i t = { [SDL i, Chip8 ::: STATE Chip8, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
 
 defaultROM : String
 defaultROM = "./roms/maze.rom"
@@ -68,46 +70,15 @@ runChip8 chip =
         -- Chip8 :- put $ record { Counter = counter } modifiedChip
         pure ()
 
-Chip8Effect : Type -> Type
-Chip8Effect t = { [Chip8 ::: STATE Chip8] } Eff t
-
--- SDL
-process : Maybe Event -> Chip8Effect Bool
-process (Just AppQuit) = pure False
--- TODO if halted, putStrLn $ "Chip8 halted. Reason: " ++ errorMessage chip
-process (Just (KeyDown KeyEsc)) = pure False
--- process (Just (KeyDown KeyLeftArrow))  = do xmove (-2); pure True
--- process (Just (KeyUp KeyLeftArrow))    = do xmove 0; pure True
--- process (Just (KeyDown KeyRightArrow)) = do xmove 2; pure True
--- process (Just (KeyUp KeyRightArrow))   = do xmove 0; pure True
--- process (Just (KeyDown KeyUpArrow))    = do ymove (-2); pure True
--- process (Just (KeyUp KeyUpArrow))      = do ymove 0; pure True
--- process (Just (KeyDown KeyDownArrow))  = do ymove 2; pure True
--- process (Just (KeyUp KeyDownArrow))    = do ymove 0; pure True
--- process (Just (KeyDown KeySpace))      = do addBullet; pure True
-process _ = pure True
-
-Running : Type -> Type
-Running t = State SDLSurface t
-
 partial
-runChip8Loop : Running ()
+runChip8Loop : State SDLSurface ()
 runChip8Loop =
   do
     chip <- Chip8 :- get
     runChip8 chip
     -- drawScreen (getDisplay chip)
     usleep 2083 -- update ~480 times per second
-    when !(process !poll) runChip8Loop
-
-partial
-kickoff : State () ()
-kickoff =
-  do
-    initialise (64 * Scale) (32 * Scale)
-    runChip8Loop
-    quit
-    putStrLn "Fin."
+    when !(processKeys !poll) runChip8Loop
 
 partial
 main : IO ()
@@ -119,3 +90,11 @@ main =
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
     runInit [(), Chip8 := chip8, RandomSeed, (), ()] kickoff
+  where
+    kickoff : State () ()
+    kickoff =
+      do
+        initialise (64 * Scale) (32 * Scale)
+        runChip8Loop
+        quit
+        putStrLn "Fin."
