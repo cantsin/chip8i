@@ -9,6 +9,10 @@ record Keypad where
   K : Vect 16 Bool
 
 export
+Show Keypad where
+  show k = show (K k)
+
+export
 isKeyPressed : (keypad : Keypad) -> (n : Fin 16) -> Bool
 isKeyPressed keypad n = Vect.index n (K keypad)
 

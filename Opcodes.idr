@@ -390,11 +390,7 @@ loadRegisterDelay c r =
 -- special: modifies external state
 waitForKeyPress : (chip : Chip8) -> (register : Register) -> IO Chip8
 waitForKeyPress chip r =
-  let c = getComputer chip in
-  let k = ?waitForKeyPress chip in
-  let cpu = setRegister c r k in
-  do
-    pure $ record { Computer = incrementPC cpu } chip
+  pure $ record { State = WaitingForKey r } chip
 
 setDelayFromRegister : (cpu : Cpu) -> (register : Register) -> Cpu
 setDelayFromRegister c r =

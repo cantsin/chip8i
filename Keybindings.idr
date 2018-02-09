@@ -47,7 +47,6 @@ updateKeyup releasedKey =
 
 export
 processKeys : Maybe Event -> { [Chip8 ::: STATE Chip8, STDIO] } Effects.DepEff.Eff Bool
-processKeys (Just (KeyDown KeyEsc)) = pure False
 processKeys (Just (KeyDown $ KeyAny '1')) = updateKeydown 0x1
 processKeys (Just (KeyUp   $ KeyAny '1')) = updateKeyup   0x1
 processKeys (Just (KeyDown $ KeyAny '2')) = updateKeydown 0x2
@@ -80,6 +79,7 @@ processKeys (Just (KeyDown $ KeyAny 'c')) = updateKeydown 0xb
 processKeys (Just (KeyUp   $ KeyAny 'c')) = updateKeyup   0xb
 processKeys (Just (KeyDown $ KeyAny 'v')) = updateKeydown 0xf
 processKeys (Just (KeyUp   $ KeyAny 'v')) = updateKeyup   0xf
+processKeys (Just (KeyDown KeyEsc)) = pure False
 processKeys (Just AppQuit) =
   do
     chip <- Chip8 :- get

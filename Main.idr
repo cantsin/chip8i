@@ -12,10 +12,12 @@ import Effect.Random
 
 import Constants
 import Opcodes
+import Screen
 import Keybindings
 import Keypad
 import Chip8
 import Ram
+import Cpu
 
 %default total
 
@@ -54,31 +56,55 @@ getROMPath args =
     Just path => path
 
 partial
-runChip8 : (chip : Chip8) -> { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
-runChip8 chip =
-  case getState chip of
-    Halted _ => pure ()
-    WaitingForKey _ => pure ()
-    Active =>
-      -- The CPU runs at roughly 500Hz, however, we want to tick down the
-      -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
-      -- we tick down DT/ST every 8 CPU cycles.
-      let counter = getCounter chip + 1 in
-      let tick = counter `mod` 8 == 1 in
-      do
-        -- modifiedChip <- runOneCycle chip tick
-        -- Chip8 :- put $ record { Counter = counter } modifiedChip
-        pure ()
+runChip8 : { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
+runChip8 =
+  do
+    chip <- Chip8 :- get
+    case getState chip of
+      Halted _ => pure ()
+      WaitingForKey _ => pure ()
+      Active =>
+        -- The CPU runs at roughly 500Hz, however, we want to tick down the
+        -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
+        -- we tick down DT/ST every 8 CPU cycles.
+        let counter = getCounter chip + 1 in
+        let tick = counter `mod` 8 == 1 in
+        do
+          -- modifiedChip <- runOneCycle chip tick
+          -- Chip8 :- put $ record { Counter = counter } modifiedChip
+          --putStrLn $ show (getComputer chip)
+          pure ()
+
+drawScreen : { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
+drawScreen =
+  let c : Chip8 = !(Chip8 :- get) in
+  let cpu : Cpu = getComputer c in
+  let screen : Screen = getDisplay c in
+  let keys : Keypad = getKeypad c in
+  do
+    --chip <- Chip8 :- get
+    putStrLn $ show cpu
+    putStrLn $ show screen
+    putStrLn $ show keys
+    flip
 
 partial
 runChip8Loop : State SDLSurface ()
 runChip8Loop =
   do
-    chip <- Chip8 :- get
-    runChip8 chip
-    -- drawScreen (getDisplay chip)
+    runChip8
+    drawScreen
     usleep 2083 -- update ~480 times per second
     when !(processKeys !poll) runChip8Loop
+
+partial
+kickoff : State () ()
+kickoff =
+  do
+    initialise (64 * Scale) (32 * Scale)
+    runChip8Loop
+    quit
+    putStrLn "Fin."
 
 partial
 main : IO ()
@@ -90,11 +116,3 @@ main =
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
     runInit [(), Chip8 := chip8, RandomSeed, (), ()] kickoff
-  where
-    kickoff : State () ()
-    kickoff =
-      do
-        initialise (64 * Scale) (32 * Scale)
-        runChip8Loop
-        quit
-        putStrLn "Fin."
