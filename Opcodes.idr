@@ -359,7 +359,7 @@ display chip r1 r2 s =
   let y = cast $ getRegister c r2 in
   let loadAddress = cast $ getRegisterI c in
   do
-    sprite <- loadBlock chip loadAddress s
+    sprite <- _loadBlock chip loadAddress s
     newDisplay <- pure $ writeSpriteToScreen screen sprite x y
     pure $ record { Display = newDisplay, Computer = incrementPC c } chip
 
@@ -430,7 +430,7 @@ storeBCD chip r =
   let third = value `mod` 10 in
   let digits = [first, second, third] in
   do
-    dumpBlock chip dumpAddress digits
+    _dumpBlock chip dumpAddress digits
     pure $ record { Computer = incrementPC c } chip
 
 dumpRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
@@ -441,7 +441,7 @@ dumpRegisters chip r =
   let len = restrict 15 $ cast value in
   let registers = getRegisters c len in
   do
-    dumpBlock chip dumpAddress registers
+    _dumpBlock chip dumpAddress registers
     pure $ record { Computer = incrementPC c } chip
 
 loadRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
@@ -451,7 +451,7 @@ loadRegisters chip r =
   let value : Int = cast $ getRegister c r in
   let len = restrict 15 $ cast value in
   do
-    registers <- loadBlock chip loadAddress len
+    registers <- _loadBlock chip loadAddress len
     cpu <- pure $ setRegisters c len registers
     pure $ record { Computer = incrementPC cpu } chip
 

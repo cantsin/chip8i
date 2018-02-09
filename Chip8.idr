@@ -5,15 +5,12 @@ import Data.Bits
 import Data.Fin
 import Data.Buffer
 import Data.Vect
-import Effects
-import Effect.State
 
 import Utilities
 import Constants
 import Screen
 import Keypad
 import Cpu
-import Ram
 
 public
 export
@@ -48,6 +45,14 @@ newChip8 =
           System.exitFailure
 
 export
+loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
+loadROMAt chip rom address =
+  let memory = Memory chip in
+  let length = Buffer.size rom in
+  do
+    Buffer.copyData rom 0 length memory address
+
+export
 getComputer : (chip : Chip8) -> Cpu
 getComputer = Computer
 
@@ -78,14 +83,10 @@ export
 isKeyPressed : (chip : Chip8) -> (n : Fin 16) -> Bool
 isKeyPressed chip n = isKeyPressed (Keys chip) n
 
+-- TODO move over to MemoryIO
 export
-loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
-loadROMAt chip rom address =
-  Buffer.copyData rom 0 (Buffer.size rom) (Memory chip) address
-
-export
-dumpBlock : (chip : Chip8) -> (address : Int) -> (Vect len Bits8) -> IO Int
-dumpBlock chip address values =
+_dumpBlock : (chip : Chip8) -> (address : Int) -> (Vect len Bits8) -> IO Int
+_dumpBlock chip address values =
   let ram = Memory chip in
   -- not aware of a faster way, this seems inefficient
   foldl (writeByte ram) (pure address) values
@@ -106,8 +107,8 @@ build {n = S _} f = do
   pure $ first :: rest
 
 export
-loadBlock : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect (finToNat n) Bits8)
-loadBlock chip address n =
+_loadBlock : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect (finToNat n) Bits8)
+_loadBlock chip address n =
   let ram = Memory chip in
   build {n = finToNat n} (readByte ram address)
   where
@@ -115,8 +116,3 @@ loadBlock chip address n =
     readByte buffer address count =
       let offset = cast $ finToNat count in
       Buffer.getByte buffer (address + offset)
-
-export
-loadDefaultSpriteDataAt : (chip : Chip8) -> (address : Int) -> IO Int
-loadDefaultSpriteDataAt chip address =
-  dumpBlock chip address $ fromList defaultSpriteData

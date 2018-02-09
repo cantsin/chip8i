@@ -18,6 +18,7 @@ import Keypad
 import Chip8
 import Ram
 import Cpu
+import MemoryIO
 
 %default total
 
@@ -97,10 +98,11 @@ runChip8Loop =
     when !(processKeys !poll) runChip8Loop
 
 partial
-kickoff : State () ()
-kickoff =
+kickoff : Buffer -> State () ()
+kickoff rom =
   do
     initialise (64 * Scale) (32 * Scale)
+    loadDefaultSpriteDataAt DefaultSpriteDataAddress
     runChip8Loop
     quit
     putStrLn "Fin."
@@ -112,6 +114,5 @@ main =
     args <- getArgs
     rom <- readROMFromFile $ getROMPath args
     chip8 <- newChip8
-    loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
-    runInit [(), Chip8 := chip8, (), RandomSeed, (), ()] kickoff
+    runInit [(), Chip8 := chip8, (), RandomSeed, (), ()] $ kickoff rom
