@@ -70,10 +70,8 @@ runChip8 =
         let counter = getCounter chip + 1 in
         let tick = counter `mod` 8 == 1 in
         do
-          -- modifiedChip <- runOneCycle chip tick
-          -- Chip8 :- put $ record { Counter = counter } modifiedChip
-          --putStrLn $ show (getComputer chip)
-          pure ()
+          runOneCycle chip tick
+          Chip8 :- put (record { Counter = counter } chip)
 
 drawScreen : { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
 drawScreen =
@@ -82,7 +80,7 @@ drawScreen =
   let screen : Screen = getDisplay c in
   let keys : Keypad = getKeypad c in
   do
-    --chip <- Chip8 :- get
+    -- debugging
     putStrLn $ show cpu
     putStrLn $ show screen
     putStrLn $ show keys

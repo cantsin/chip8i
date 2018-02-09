@@ -25,7 +25,7 @@ updateKeydown pressedKey =
         let keypad = setKeyPress (getKeypad chip) pressedKey in
         let cpu = setRegister (getComputer chip) r $ cast pressedKey in
         do
-          Chip8 :- put (record { Keys = keypad, Computer = incrementPC cpu } chip)
+          Chip8 :- put (record { State = Active, Keys = keypad, Computer = incrementPC cpu } chip)
           pure True
       Halted =>
         pure False

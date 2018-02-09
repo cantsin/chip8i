@@ -326,6 +326,7 @@ jumpRegister0 chip addr =
 -- this is a hack. we do not run effects in one block, so fake
 -- randomness by seeding with the CPU counter multiplied by the
 -- current time. Idris effects seem deprecated, anyhow.
+-- TODO remove?
 partial
 getRandomByte : (counter : Integer) -> Eff Bits8 [RND, SYSTEM]
 getRandomByte counter =
