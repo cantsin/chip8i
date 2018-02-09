@@ -14,6 +14,7 @@ import Cpu
 import Screen
 import Chip8
 import Utilities
+import Ram
 
 Register : Type
 Register = Fin 16
@@ -497,8 +498,9 @@ dispatch chip (LoadRegisters r)          = loadRegisters chip r
 
 export
 partial
-runOneCycle : (chip : Chip8) -> (tick : Bool) -> { [Chip8 ::: STATE Chip8, STDIO] } Effects.DepEff.Eff ()
-runOneCycle chip tick =
+runOneCycle : (tick : Bool) -> { [Chip8 ::: STATE Chip8, RAM] } Effects.DepEff.Eff ()
+runOneCycle tick =
+  let chip : Chip8 = !(Chip8 :- get) in
   do
     -- opcodeValue <- getOpcode chip
     ?test

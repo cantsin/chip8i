@@ -4,6 +4,7 @@ import Effects
 import Data.Bits
 import Data.Buffer
 
+public
 export
 data Ram : Effect where
   Allocate : Int -> Ram (Maybe Buffer) a (\v => ())
@@ -11,24 +12,27 @@ data Ram : Effect where
   WriteByte : Buffer -> Int -> Bits8 -> Ram () a (\v => ())
   Copy : Buffer -> Int -> Int -> Buffer -> Int -> Ram () a (\v => ())
 
+public
+export
 Handler Ram IO where
-  handle ram (Allocate len) k =
+  handle () (Allocate len) k =
     do
       buf <- Buffer.newBuffer len
       k buf ()
-  handle ram (ReadByte buf addr) k =
+  handle () (ReadByte buf addr) k =
     do
       val <- Buffer.getByte buf addr
-      k val ram
-  handle ram (WriteByte buf addr val) k =
+      k val ()
+  handle () (WriteByte buf addr val) k =
     do
       Buffer.setByte buf addr val
       k () ()
-  handle ram (Copy buf start len dest loc) k =
+  handle () (Copy buf start len dest loc) k =
     do
       Buffer.copyData buf start len dest loc
       k () ()
 
+public
 export
-RAM : Type -> EFFECT
-RAM t = MkEff t Ram
+RAM : EFFECT
+RAM = MkEff () Ram

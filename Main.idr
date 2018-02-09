@@ -24,7 +24,7 @@ import Cpu
 -- Effects: support SDL, chip8 state, RAM (buffer I/O), random number
 -- generation, console I/O, and system interaction.
 State : Type -> Type -> Type
-State i t = { [SDL i, Chip8 ::: STATE Chip8, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
+State i t = { [SDL i, Chip8 ::: STATE Chip8, RAM, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
 
 defaultROM : String
 defaultROM = "./roms/maze.rom"
@@ -56,7 +56,7 @@ getROMPath args =
     Just path => path
 
 partial
-runChip8 : { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
+runChip8 : { [SDL_ON, Chip8 ::: STATE Chip8, RAM] } Eff ()
 runChip8 =
   do
     chip <- Chip8 :- get
@@ -68,10 +68,11 @@ runChip8 =
         -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
         -- we tick down DT/ST every 8 CPU cycles.
         let counter = getCounter chip + 1 in
-        let tick = counter `mod` 8 == 1 in
+        let newCounter = counter `mod` 8 in
+        let tick = newCounter == 7 in
         do
-          runOneCycle chip tick
-          Chip8 :- put (record { Counter = counter } chip)
+          runOneCycle tick
+          Chip8 :- put (record { Counter = newCounter } chip)
 
 drawScreen : { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
 drawScreen =
@@ -113,4 +114,4 @@ main =
     chip8 <- newChip8
     loadDefaultSpriteDataAt chip8 DefaultSpriteDataAddress
     loadROMAt chip8 rom StartingAddress
-    runInit [(), Chip8 := chip8, RandomSeed, (), ()] kickoff
+    runInit [(), Chip8 := chip8, (), RandomSeed, (), ()] kickoff
