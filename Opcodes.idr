@@ -496,24 +496,30 @@ dispatch chip (StoreBCD r)               = storeBCD chip r
 dispatch chip (DumpRegisters r)          = dumpRegisters chip r
 dispatch chip (LoadRegisters r)          = loadRegisters chip r
 
+-- TODO new module, MemoryIO
+export
+getOpcode : { [Chip8 ::: STATE Chip8, RAM] } Effects.DepEff.Eff (Bits16)
+getOpcode =
+  let chip = !(Chip8 :- get) in
+  let memory = Memory chip in
+  let cpu = Computer chip in
+  let pc : Int = cast $ getPC cpu in
+  let b1 = !(readByte memory pc) in
+  let b2 = !(readByte memory (pc + 1)) in
+  pure $ (cast b1) * 0x100 + (cast b2)
+
 export
 partial
 runOneCycle : (tick : Bool) -> { [Chip8 ::: STATE Chip8, RAM] } Effects.DepEff.Eff ()
 runOneCycle tick =
-  let chip : Chip8 = !(Chip8 :- get) in
-  do
-    -- opcodeValue <- getOpcode chip
-    ?test
-    -- instruction <- pure $ extractOpcode opcodeValue
-    -- case instruction of
-    --   Invalid _ =>
-    --     let errorMessage = "Unknown opcode: " ++ (show instruction) in
-    --     Chip8 :- put $ record { State = Halted errorMessage } chip
-    --   _ =>
-    --     do
-    --       -- debugging
-    --       -- putStrLn $ (show $ getDisplay chip)
-    --       -- putStrLn $ (show $ getComputer chip) ++ " => " ++ (show instruction)
+  let chip = !(Chip8 :- get) in
+  let instruction = extractOpcode !getOpcode in
+  case instruction of
+    Invalid _ =>
+      let errorMessage = "Unknown opcode: " ++ (show instruction) in
+      Chip8 :- put (record { State = Halted errorMessage } chip)
+    _ =>
+      ?runOneCycle
     --       modifiedChip <- dispatch chip instruction
     --       modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
-    --       Chip8 :- put $ record { Computer = modifiedComputer } modifiedChip
+    --       Chip8 :- put (record { Computer = modifiedComputer } modifiedChip)

@@ -13,6 +13,7 @@ import Constants
 import Screen
 import Keypad
 import Cpu
+import Ram
 
 public
 export
@@ -21,12 +22,13 @@ data Chip8State =
   | WaitingForKey (Fin 16)
   | Halted String
 
+public -- TODO
 export
 record Chip8 where
   constructor MkChip8
   Computer : Cpu
   Display : Screen
-  Ram : Buffer -- 4kb RAM
+  Memory : Buffer -- 4kb RAM
   Keys : Keypad
   Counter : Integer -- TODO pull out?
   State : Chip8State -- TODO pull out?
@@ -79,12 +81,12 @@ isKeyPressed chip n = isKeyPressed (Keys chip) n
 export
 loadROMAt : (chip : Chip8) -> (rom : Buffer) -> (address : Int) -> IO ()
 loadROMAt chip rom address =
-  Buffer.copyData rom 0 (Buffer.size rom) (Ram chip) address
+  Buffer.copyData rom 0 (Buffer.size rom) (Memory chip) address
 
 export
 dumpBlock : (chip : Chip8) -> (address : Int) -> (Vect len Bits8) -> IO Int
 dumpBlock chip address values =
-  let ram = Ram chip in
+  let ram = Memory chip in
   -- not aware of a faster way, this seems inefficient
   foldl (writeByte ram) (pure address) values
   where
@@ -106,7 +108,7 @@ build {n = S _} f = do
 export
 loadBlock : (chip : Chip8) -> (address : Int) -> (n : Fin len) -> IO (Vect (finToNat n) Bits8)
 loadBlock chip address n =
-  let ram = Ram chip in
+  let ram = Memory chip in
   build {n = finToNat n} (readByte ram address)
   where
     readByte : (buffer : Buffer) -> (address : Int) -> (count : Fin index) -> IO Bits8
@@ -120,9 +122,9 @@ loadDefaultSpriteDataAt chip address =
   dumpBlock chip address $ fromList defaultSpriteData
 
 export
-getOpcode : (chip : Chip8) -> IO Bits16
-getOpcode chip =
-  let ram = Ram chip in
+getOpcode_ : (chip : Chip8) -> IO Bits16
+getOpcode_ chip =
+  let ram = Memory chip in
   let cpu = Computer chip in
   let pc : Int = cast $ getPC cpu in
   do

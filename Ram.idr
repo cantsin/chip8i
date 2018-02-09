@@ -36,3 +36,8 @@ public
 export
 RAM : EFFECT
 RAM = MkEff () Ram
+
+public
+export
+readByte : Buffer -> Int -> Eff Bits8 [RAM]
+readByte buf addr = call (ReadByte buf addr)
