@@ -15,6 +15,7 @@ import Screen
 import Chip8
 import Utilities
 import Ram
+import MemoryIO
 
 Register : Type
 Register = Fin 16
@@ -495,18 +496,6 @@ dispatch chip (LoadRegisterWithSprite r) = updateCPU chip $ loadRegisterWithSpri
 dispatch chip (StoreBCD r)               = storeBCD chip r
 dispatch chip (DumpRegisters r)          = dumpRegisters chip r
 dispatch chip (LoadRegisters r)          = loadRegisters chip r
-
--- TODO new module, MemoryIO
-export
-getOpcode : { [Chip8 ::: STATE Chip8, RAM] } Effects.DepEff.Eff (Bits16)
-getOpcode =
-  let chip = !(Chip8 :- get) in
-  let memory = Memory chip in
-  let cpu = Computer chip in
-  let pc : Int = cast $ getPC cpu in
-  let b1 = !(readByte memory pc) in
-  let b2 = !(readByte memory (pc + 1)) in
-  pure $ (cast b1) * 0x100 + (cast b2)
 
 export
 partial

@@ -31,7 +31,7 @@ record Chip8 where
   Memory : Buffer -- 4kb RAM
   Keys : Keypad
   Counter : Integer -- TODO pull out?
-  State : Chip8State -- TODO pull out?
+  State : Chip8State
 
 export
 newChip8 : IO Chip8
@@ -120,14 +120,3 @@ export
 loadDefaultSpriteDataAt : (chip : Chip8) -> (address : Int) -> IO Int
 loadDefaultSpriteDataAt chip address =
   dumpBlock chip address $ fromList defaultSpriteData
-
-export
-getOpcode_ : (chip : Chip8) -> IO Bits16
-getOpcode_ chip =
-  let ram = Memory chip in
-  let cpu = Computer chip in
-  let pc : Int = cast $ getPC cpu in
-  do
-    b1 <- Buffer.getByte ram pc
-    b2 <- Buffer.getByte ram (pc + 1)
-    pure $ (cast b1) * 0x100 + (cast b2)
