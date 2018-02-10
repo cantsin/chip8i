@@ -22,10 +22,12 @@ import MemoryIO
 
 %default total
 
--- Effects: support SDL, chip8 state, RAM (buffer I/O), random number
--- generation, console I/O, and system interaction (for `usleep`).
+data Counter : Type where -- empty type
+
+-- Effects: support SDL, chip8 state, counter, RAM (buffer I/O),
+-- random number generation, console I/O, and system (for `usleep`).
 State : Type -> Type -> Type
-State i t = { [SDL i, Chip8 ::: STATE Chip8, RAM, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
+State i t = { [SDL i, Chip8 ::: STATE Chip8, Counter ::: STATE Integer, RAM, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
 
 defaultROM : String
 defaultROM = "./roms/maze.rom"
@@ -57,7 +59,7 @@ getROMPath args =
     Just path => path
 
 partial
-runChip8 : { [SDL_ON, Chip8 ::: STATE Chip8, RAM, RND] } Eff ()
+runChip8 : { [SDL_ON, Chip8 ::: STATE Chip8, Counter ::: STATE Integer, RAM, RND] } Eff ()
 runChip8 =
   do
     chip <- Chip8 :- get
@@ -68,13 +70,12 @@ runChip8 =
         -- The CPU runs at roughly 500Hz, however, we want to tick down the
         -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
         -- we tick down DT/ST every 8 CPU cycles.
-        let counter = Counter chip + 1 in
+        let counter = !(Counter :- get) + 1 in
         let newCounter = counter `mod` 8 in
         let tick = newCounter == 7 in
         do
           runOneCycle tick
-          newChip <- Chip8 :- get
-          Chip8 :- put (record { Counter = newCounter } newChip)
+          Counter :- put newCounter
 
 drawScreen : { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
 drawScreen =
@@ -116,4 +117,4 @@ main =
     rom <- readROMFromFile $ getROMPath args
     chip8 <- newChip8
     loadROMAt chip8 rom StartingAddress
-    runInit [(), Chip8 := chip8, (), RandomSeed, (), ()] $ kickoff rom
+    runInit [(), Chip8 := chip8, Counter := 0, (), RandomSeed, (), ()] $ kickoff rom

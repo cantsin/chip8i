@@ -27,7 +27,6 @@ record Chip8 where
   Display : Screen
   Memory : Buffer -- 4kb RAM
   Keys : Keypad
-  Counter : Integer -- TODO pull out?
   State : Chip8State
 
 export
@@ -38,7 +37,7 @@ newChip8 =
     case buf of
       Just ram =>
         let keys = MkKeypad $ Vect.replicate 16 False in
-        pure $ MkChip8 newCpu newScreen ram keys 0 Active
+        pure $ MkChip8 newCpu newScreen ram keys Active
       Nothing =>
         do
           putStrLn "Not enough memory"
