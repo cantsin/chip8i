@@ -25,3 +25,11 @@ RandomSeed = 1234567890
 export
 Scale : Int
 Scale = 5
+
+export
+Width : Int
+Width = 64
+
+export
+Height : Int
+Height = 32

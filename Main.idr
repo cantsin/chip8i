@@ -86,7 +86,7 @@ drawScreen =
   do
     -- debugging
     putStrLn $ show cpu
-    putStrLn $ show screen
+    -- putStrLn $ show screen
     putStrLn $ show keys
     renderScreen screen
     flip
@@ -104,7 +104,7 @@ partial
 kickoff : Buffer -> State () ()
 kickoff rom =
   do
-    initialise (64 * Scale) (32 * Scale)
+    initialise (Width * Scale) (Height * Scale)
     loadDefaultSpriteDataAt DefaultSpriteDataAddress
     runChip8Loop
     quit
