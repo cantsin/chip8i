@@ -23,7 +23,7 @@ import MemoryIO
 %default total
 
 -- Effects: support SDL, chip8 state, RAM (buffer I/O), random number
--- generation, console I/O, and system interaction.
+-- generation, console I/O, and system interaction (for `usleep`).
 State : Type -> Type -> Type
 State i t = { [SDL i, Chip8 ::: STATE Chip8, RAM, RND, STDIO, SYSTEM] } Effects.DepEff.Eff t
 
@@ -57,30 +57,31 @@ getROMPath args =
     Just path => path
 
 partial
-runChip8 : { [SDL_ON, Chip8 ::: STATE Chip8, RAM] } Eff ()
+runChip8 : { [SDL_ON, Chip8 ::: STATE Chip8, RAM, RND] } Eff ()
 runChip8 =
   do
     chip <- Chip8 :- get
-    case getState chip of
+    case State chip of
       Halted _ => pure ()
       WaitingForKey _ => pure ()
       Active =>
         -- The CPU runs at roughly 500Hz, however, we want to tick down the
         -- CPU DT/ST at a rate of 60Hz. As a first approximation, let's say
         -- we tick down DT/ST every 8 CPU cycles.
-        let counter = getCounter chip + 1 in
+        let counter = Counter chip + 1 in
         let newCounter = counter `mod` 8 in
         let tick = newCounter == 7 in
         do
           runOneCycle tick
-          Chip8 :- put (record { Counter = newCounter } chip)
+          newChip <- Chip8 :- get
+          Chip8 :- put (record { Counter = newCounter } newChip)
 
 drawScreen : { [SDL_ON, Chip8 ::: STATE Chip8, STDIO] } Eff ()
 drawScreen =
   let c : Chip8 = !(Chip8 :- get) in
-  let cpu : Cpu = getComputer c in
-  let screen : Screen = getDisplay c in
-  let keys : Keypad = getKeypad c in
+  let cpu : Cpu = Computer c in
+  let screen : Screen = Display c in
+  let keys : Keypad = Keys c in
   do
     -- debugging
     putStrLn $ show cpu

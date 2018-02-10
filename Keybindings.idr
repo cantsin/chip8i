@@ -11,32 +11,32 @@ import Cpu
 import Keypad
 import Utilities
 
-updateKeydown : (pressedKey : Fin 16) -> { [Chip8 ::: STATE Chip8] } Effects.DepEff.Eff Bool
+updateKeydown : (pressedKey : Fin 16) -> { [Chip8 ::: STATE Chip8] } Eff Bool
 updateKeydown pressedKey =
   do
     chip <- Chip8 :- get
-    case getState chip of
+    case State chip of
       Active =>
-        let keypad = setKeyPress (getKeypad chip) pressedKey in
+        let keypad = setKeyPress (Keys chip) pressedKey in
         do
           Chip8 :- put (record { Keys = keypad } chip)
           pure True
       WaitingForKey r =>
-        let keypad = setKeyPress (getKeypad chip) pressedKey in
-        let cpu = setRegister (getComputer chip) r $ cast pressedKey in
+        let keypad = setKeyPress (Keys chip) pressedKey in
+        let cpu = setRegister (Computer chip) r $ cast pressedKey in
         do
           Chip8 :- put (record { State = Active, Keys = keypad, Computer = incrementPC cpu } chip)
           pure True
       Halted =>
         pure False
 
-updateKeyup : (releasedKey : Fin 16) -> { [Chip8 ::: STATE Chip8] } Effects.DepEff.Eff Bool
+updateKeyup : (releasedKey : Fin 16) -> { [Chip8 ::: STATE Chip8] } Eff Bool
 updateKeyup releasedKey =
   do
     chip <- Chip8 :- get
-    case getState chip of
+    case State chip of
       Active =>
-        let keypad = clearKeyPress (getKeypad chip) releasedKey in
+        let keypad = clearKeyPress (Keys chip) releasedKey in
         do
           Chip8 :- put (record { Keys = keypad } chip)
           pure True
@@ -46,7 +46,7 @@ updateKeyup releasedKey =
         pure False
 
 export
-processKeys : Maybe Event -> { [Chip8 ::: STATE Chip8, STDIO] } Effects.DepEff.Eff Bool
+processKeys : Maybe Event -> { [Chip8 ::: STATE Chip8, STDIO] } Eff Bool
 processKeys (Just (KeyDown $ KeyAny '1')) = updateKeydown 0x1
 processKeys (Just (KeyUp   $ KeyAny '1')) = updateKeyup   0x1
 processKeys (Just (KeyDown $ KeyAny '2')) = updateKeydown 0x2

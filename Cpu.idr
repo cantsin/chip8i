@@ -1,7 +1,6 @@
 module Cpu
 
 import System
-import Data.Buffer
 import Data.Vect
 
 import Utilities

@@ -3,9 +3,6 @@ module Opcodes
 import Effects
 import Effect.Random
 import Effect.State
-import Effect.StdIO
-import Effect.System
-import Data.Buffer
 import Data.Bits
 import Data.Fin
 import Data.Vect
@@ -188,24 +185,23 @@ extractOpcode op =
 
 -- opcode implementations
 
--- special: modifies external state
-clearScreen : (chip8 : Chip8) -> Chip8
+clearScreen : (chip : Chip8) -> Chip8
 clearScreen chip =
-  let c = getComputer chip in
-  record { Display = newScreen, Computer = incrementPC c } chip
+  let cpu = Computer chip in
+  record { Display = newScreen, Computer = incrementPC cpu } chip
 
-return : (chip8 : Chip8) -> Chip8
+return : (chip : Chip8) -> Chip8
 return chip =
-  let c = getComputer chip in
-  record { Computer = popStack c } chip
+  let cpu = Computer chip in
+  record { Computer = popStack cpu } chip
 
 jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect chip addr =
-  let c = getComputer chip in
-  if (getPC c == addr) then
+  let cpu = Computer chip in
+  if (getPC cpu == addr) then
     record { State = Halted "Infinite loop" } chip
   else
-    record { Computer = setPC c addr } chip
+    record { Computer = setPC cpu addr } chip
 
 skipIfRegisterEqual : (cpu : Cpu) -> (register : Register) -> (value : Value) -> Cpu
 skipIfRegisterEqual c r v =
@@ -320,80 +316,64 @@ addRegisterDirect c r v =
 
 jumpRegister0 : (chip : Chip8) -> (address : Address) -> Chip8
 jumpRegister0 chip addr =
-  let c = getComputer chip in
-  let value : Bits16 = cast $ getRegister c 0 in
+  let cpu = Computer chip in
+  let value : Bits16 = cast $ getRegister cpu 0 in
   let newAddress = addr + value in
   jumpDirect chip newAddress
 
--- this is a hack. we do not run effects in one block, so fake
--- randomness by seeding with the CPU counter multiplied by the
--- current time. Idris effects seem deprecated, anyhow.
--- TODO remove?
 partial
-getRandomByte : (counter : Integer) -> Eff Bits8 [RND, SYSTEM]
-getRandomByte counter =
-  do
-    t <- time
-    srand $ t * counter
-    val <- rndInt 0x00 0xff
-    pure $ cast val
-
--- special: modifies external state
-partial
-andRandomValue : (chip : Chip8) -> (register : Register) -> (value : Value) -> IO Chip8
-andRandomValue chip r v =
-  let c = getComputer chip in
+andRandomValue : (register : Register) -> (value : Value) -> { [Chip8 ::: STATE Chip8, RND] } Eff ()
+andRandomValue r v =
+  let chip = !(Chip8 :- get) in
+  let cpu = Computer chip in
   let mask = cast v in
-  do
-    rand <- run $ getRandomByte (getCounter chip)
-    value <- pure $ cast rand `and` mask
-    cpu <- pure $ setRegister c r $ cast value
-    pure $ record { Computer = incrementPC cpu } chip
+  let rand = !(rndInt 0x00 0xff) in
+  let value = cast rand `and` mask in
+  let newCpu = setRegister cpu r $ cast value in
+  let newChip = record { Computer = incrementPC newCpu } chip in
+  Chip8 :- put newChip
 
--- special: modifies external state
-display : (chip : Chip8) -> (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> IO Chip8
-display chip r1 r2 s =
-  let c = getComputer chip in
-  let screen = getDisplay chip in
-  let x = cast $ getRegister c r1 in
-  let y = cast $ getRegister c r2 in
-  let loadAddress = cast $ getRegisterI c in
-  do
-    sprite <- _loadBlock chip loadAddress s
-    newDisplay <- pure $ writeSpriteToScreen screen sprite x y
-    pure $ record { Display = newDisplay, Computer = incrementPC c } chip
+display : (register : Register) -> (register : Register) -> (sprite: SpriteLength) -> { [Chip8 ::: STATE Chip8, RAM] } Eff ()
+display r1 r2 s =
+  let chip = !(Chip8 :- get) in
+  let cpu = Computer chip in
+  let screen = Display chip in
+  let x = cast $ getRegister cpu r1 in
+  let y = cast $ getRegister cpu r2 in
+  let loadAddress = cast $ getRegisterI cpu in
+  let sprite = !(loadBlock loadAddress s) in
+  let newDisplay = writeSpriteToScreen screen sprite x y in
+  let newChip = record { Display = newDisplay, Computer = incrementPC cpu } chip in
+  Chip8 :- put newChip
 
--- special: accesses external state
 skipIfKeyPressed : (chip : Chip8) -> (register : Register) -> Chip8
 skipIfKeyPressed chip r =
-  let c = getComputer chip in
-  let k = cast $ getRegister c r in
+  let cpu = Computer chip in
+  let k = cast $ getRegister cpu r in
   let pressed = isKeyPressed chip k in
   if pressed then
-    record { Computer = incrementPC $ incrementPC c } chip
+    record { Computer = incrementPC $ incrementPC cpu } chip
   else
-    record { Computer = incrementPC c } chip
+    record { Computer = incrementPC cpu } chip
 
--- special: accesses external state
-skipIfKeyNotPressed : (chip8 : Chip8) -> (register : Register) -> Chip8
+skipIfKeyNotPressed : (chip : Chip8) -> (register : Register) -> Chip8
 skipIfKeyNotPressed chip r =
-  let c = getComputer chip in
-  let k = cast $ getRegister c r in
+  let cpu = Computer chip in
+  let k = cast $ getRegister cpu r in
   let pressed = isKeyPressed chip k in
   if pressed then
-    record { Computer = incrementPC c } chip
+    record { Computer = incrementPC cpu } chip
   else
-    record { Computer = incrementPC $ incrementPC c } chip
+    record { Computer = incrementPC $ incrementPC cpu } chip
 
 loadRegisterDelay : (cpu : Cpu) -> (register : Register) -> Cpu
 loadRegisterDelay c r =
   let countdown = getDelayTimer c in
   setRegister c r countdown
 
--- special: modifies external state
-waitForKeyPress : (chip : Chip8) -> (register : Register) -> IO Chip8
+waitForKeyPress : (chip : Chip8) -> (register : Register) -> Chip8
 waitForKeyPress chip r =
-  pure $ record { State = WaitingForKey r } chip
+  record { State = WaitingForKey r } chip
 
 setDelayFromRegister : (cpu : Cpu) -> (register : Register) -> Cpu
 setDelayFromRegister c r =
@@ -420,95 +400,104 @@ loadRegisterWithSprite c r =
   setRegisterI c address
 
 partial
-storeBCD : (chip : Chip8) -> (register : Register) -> IO Chip8
-storeBCD chip r =
-  let c = getComputer chip in
-  let value = getRegister c r in
-  let dumpAddress = cast $ getRegisterI c in
+storeBCD : (register : Register) -> { [Chip8 ::: STATE Chip8, RAM] } Eff ()
+storeBCD r =
+  let chip = !(Chip8 :- get) in
+  let cpu = Computer chip in
+  let value = getRegister cpu r in
+  let dumpAddress = cast $ getRegisterI cpu in
   let first = value `div` 100 in
   let second = (value `mod` 100) `div` 10 in
   let third = value `mod` 10 in
   let digits = [first, second, third] in
   do
-    _dumpBlock chip dumpAddress digits
-    pure $ record { Computer = incrementPC c } chip
+    dumpBlock dumpAddress digits
+    Chip8 :- put (record { Computer = incrementPC cpu } chip)
 
-dumpRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
-dumpRegisters chip r =
-  let c = getComputer chip in
-  let dumpAddress = cast $ getRegisterI c in
-  let value : Int = cast $ getRegister c r in
+dumpRegisters : (register : Register) -> { [Chip8 ::: STATE Chip8, RAM] } Eff ()
+dumpRegisters r =
+  let chip = !(Chip8 :- get) in
+  let cpu = Computer chip in
+  let dumpAddress = cast $ getRegisterI cpu in
+  let value : Int = cast $ getRegister cpu r in
   let len = restrict 15 $ cast value in
-  let registers = getRegisters c len in
+  let registers = getRegisters cpu len in
   do
-    _dumpBlock chip dumpAddress registers
-    pure $ record { Computer = incrementPC c } chip
+    dumpBlock dumpAddress registers
+    Chip8 :- put (record { Computer = incrementPC cpu } chip)
 
-loadRegisters : (chip : Chip8) -> (register : Register) -> IO Chip8
-loadRegisters chip r =
-  let c = getComputer chip in
-  let loadAddress = cast $ getRegisterI c in
-  let value : Int = cast $ getRegister c r in
+loadRegisters : (register : Register) -> { [Chip8 ::: STATE Chip8, RAM] } Eff ()
+loadRegisters r =
+  let chip = !(Chip8 :- get) in
+  let cpu = Computer chip in
+  let loadAddress = cast $ getRegisterI cpu in
+  let value : Int = cast $ getRegister cpu r in
   let len = restrict 15 $ cast value in
-  do
-    registers <- _loadBlock chip loadAddress len
-    cpu <- pure $ setRegisters c len registers
-    pure $ record { Computer = incrementPC cpu } chip
+  let registers = !(loadBlock loadAddress len) in
+  let newCpu = setRegisters cpu len registers in
+  Chip8 :- put (record { Computer = incrementPC cpu } chip)
 
--- convenience function for most opcodes
-updateCPU : (chip : Chip8) -> (cpu : Cpu) -> IO Chip8
-updateCPU chip c =
-  pure $ record { Computer = incrementPC c } chip
+-- convenience function for pure opcode functions that operate on the CPU only
+updateCPU : (cpu : Cpu) -> { [Chip8 ::: STATE Chip8] } Eff ()
+updateCPU cpu =
+  let chip = !(Chip8 :- get) in
+  let newComputer = incrementPC cpu in
+  Chip8 :- put (record { Computer = newComputer } chip)
+
+-- convenience function for pure opcode functions that operate on the chip
+updateChip : (chip : Chip8) -> { [Chip8 ::: STATE Chip8] } Eff ()
+updateChip newChip = Chip8 :- put newChip
 
 partial
-dispatch : (chip : Chip8) -> (opcode : Opcode) -> IO Chip8
-dispatch chip ClearScreen                = pure $ clearScreen chip
-dispatch chip Return                     = pure $ return chip
-dispatch chip (Jump addr)                = pure $ jumpDirect chip addr
-dispatch chip (Call addr)                = updateCPU chip $ pushStack (getComputer chip)
-dispatch chip (SkipIfEq r v)             = updateCPU chip $ skipIfRegisterEqual (getComputer chip) r v
-dispatch chip (SkipIfNeq r v)            = updateCPU chip $ skipIfRegisterNotEqual (getComputer chip) r v
-dispatch chip (SkipIfRegisterEq r1 r2)   = updateCPU chip $ skipIfRegistersEqual (getComputer chip) r1 r2
-dispatch chip (LoadRegister r v)         = updateCPU chip $ setRegister (getComputer chip) r v
-dispatch chip (AddRegister r v)          = updateCPU chip $ addRegisterDirect (getComputer chip) r v
-dispatch chip (CopyRegister r1 r2)       = updateCPU chip $ copyRegisters (getComputer chip) r1 r2
-dispatch chip (OrRegister r1 r2)         = updateCPU chip $ orRegister (getComputer chip) r1 r2
-dispatch chip (AndRegister r1 r2)        = updateCPU chip $ andRegister (getComputer chip) r1 r2
-dispatch chip (XorRegister r1 r2)        = updateCPU chip $ xorRegister (getComputer chip) r1 r2
-dispatch chip (AddRegisterCarry r1 r2)   = updateCPU chip $ addRegisterCarry (getComputer chip) r1 r2
-dispatch chip (SubRegister r1 r2)        = updateCPU chip $ subtractRegister (getComputer chip) r1 r2
-dispatch chip (ShiftRightRegister r1 r2) = updateCPU chip $ shiftRightRegister (getComputer chip) r1 r2
-dispatch chip (SubRegisterInverse r1 r2) = updateCPU chip $ subtractRegisterInverse (getComputer chip) r1 r2
-dispatch chip (ShiftLeftRegister r1 r2)  = updateCPU chip $ shiftLeftRegister (getComputer chip) r1 r2
-dispatch chip (SkipIfRegisterNeq r1 r2)  = updateCPU chip $ skipIfRegistersNotEqual (getComputer chip) r1 r2
-dispatch chip (LoadRegisterI r)          = updateCPU chip $ setRegisterI (getComputer chip) r
-dispatch chip (JumpRegister0 addr)       = pure $ jumpRegister0 chip addr
-dispatch chip (Random r v)               = andRandomValue chip r v
-dispatch chip (Display r1 r2 s)          = display chip r1 r2 s
-dispatch chip (SkipIfKeyPressed r)       = pure $ skipIfKeyPressed chip r
-dispatch chip (SkipIfKeyNotPressed r)    = pure $ skipIfKeyNotPressed chip r
-dispatch chip (LoadRegisterDelay r)      = updateCPU chip $ loadRegisterDelay (getComputer chip) r
-dispatch chip (WaitForKeyPress r)        = waitForKeyPress chip r
-dispatch chip (SetDelayFromRegister r)   = updateCPU chip $ setDelayFromRegister (getComputer chip) r
-dispatch chip (SetSoundFromRegister r)   = updateCPU chip $ setSoundFromRegister (getComputer chip) r
-dispatch chip (AddRegisterI r)           = updateCPU chip $ addRegisterI (getComputer chip) r
-dispatch chip (LoadRegisterWithSprite r) = updateCPU chip $ loadRegisterWithSprite (getComputer chip) r
-dispatch chip (StoreBCD r)               = storeBCD chip r
-dispatch chip (DumpRegisters r)          = dumpRegisters chip r
-dispatch chip (LoadRegisters r)          = loadRegisters chip r
+dispatch : (opcode : Opcode) -> { [Chip8 ::: STATE Chip8, RAM, RND] } Eff ()
+dispatch ClearScreen                = updateChip $ clearScreen                       !(Chip8 :- get)
+dispatch Return                     = updateChip $ return                            !(Chip8 :- get)
+dispatch (Jump addr)                = updateChip $ jumpDirect                        !(Chip8 :- get)  addr
+dispatch (Call addr)                = updateCPU  $ pushStack               (Computer !(Chip8 :- get))
+dispatch (SkipIfEq r v)             = updateCPU  $ skipIfRegisterEqual     (Computer !(Chip8 :- get)) r  v
+dispatch (SkipIfNeq r v)            = updateCPU  $ skipIfRegisterNotEqual  (Computer !(Chip8 :- get)) r  v
+dispatch (SkipIfRegisterEq r1 r2)   = updateCPU  $ skipIfRegistersEqual    (Computer !(Chip8 :- get)) r1 r2
+dispatch (LoadRegister r v)         = updateCPU  $ setRegister             (Computer !(Chip8 :- get)) r  v
+dispatch (AddRegister r v)          = updateCPU  $ addRegisterDirect       (Computer !(Chip8 :- get)) r  v
+dispatch (CopyRegister r1 r2)       = updateCPU  $ copyRegisters           (Computer !(Chip8 :- get)) r1 r2
+dispatch (OrRegister r1 r2)         = updateCPU  $ orRegister              (Computer !(Chip8 :- get)) r1 r2
+dispatch (AndRegister r1 r2)        = updateCPU  $ andRegister             (Computer !(Chip8 :- get)) r1 r2
+dispatch (XorRegister r1 r2)        = updateCPU  $ xorRegister             (Computer !(Chip8 :- get)) r1 r2
+dispatch (AddRegisterCarry r1 r2)   = updateCPU  $ addRegisterCarry        (Computer !(Chip8 :- get)) r1 r2
+dispatch (SubRegister r1 r2)        = updateCPU  $ subtractRegister        (Computer !(Chip8 :- get)) r1 r2
+dispatch (ShiftRightRegister r1 r2) = updateCPU  $ shiftRightRegister      (Computer !(Chip8 :- get)) r1 r2
+dispatch (SubRegisterInverse r1 r2) = updateCPU  $ subtractRegisterInverse (Computer !(Chip8 :- get)) r1 r2
+dispatch (ShiftLeftRegister r1 r2)  = updateCPU  $ shiftLeftRegister       (Computer !(Chip8 :- get)) r1 r2
+dispatch (SkipIfRegisterNeq r1 r2)  = updateCPU  $ skipIfRegistersNotEqual (Computer !(Chip8 :- get)) r1 r2
+dispatch (LoadRegisterI r)          = updateCPU  $ setRegisterI            (Computer !(Chip8 :- get)) r
+dispatch (JumpRegister0 addr)       = updateChip $ jumpRegister0                     !(Chip8 :- get)  addr
+dispatch (Random r v)               =              andRandomValue                                     r  v
+dispatch (Display r1 r2 s)          =              display                                            r1 r2 s
+dispatch (SkipIfKeyPressed r)       = updateChip $ skipIfKeyPressed                  !(Chip8 :- get)  r
+dispatch (SkipIfKeyNotPressed r)    = updateChip $ skipIfKeyNotPressed               !(Chip8 :- get)  r
+dispatch (LoadRegisterDelay r)      = updateCPU  $ loadRegisterDelay       (Computer !(Chip8 :- get)) r
+dispatch (WaitForKeyPress r)        = updateChip $ waitForKeyPress                   !(Chip8 :- get)  r
+dispatch (SetDelayFromRegister r)   = updateCPU  $ setDelayFromRegister    (Computer !(Chip8 :- get)) r
+dispatch (SetSoundFromRegister r)   = updateCPU  $ setSoundFromRegister    (Computer !(Chip8 :- get)) r
+dispatch (AddRegisterI r)           = updateCPU  $ addRegisterI            (Computer !(Chip8 :- get)) r
+dispatch (LoadRegisterWithSprite r) = updateCPU  $ loadRegisterWithSprite  (Computer !(Chip8 :- get)) r
+dispatch (StoreBCD r)               =              storeBCD                                           r
+dispatch (DumpRegisters r)          =              dumpRegisters                                      r
+dispatch (LoadRegisters r)          =              loadRegisters                                      r
 
 export
 partial
-runOneCycle : (tick : Bool) -> { [Chip8 ::: STATE Chip8, RAM] } Effects.DepEff.Eff ()
+runOneCycle : (tick : Bool) -> { [Chip8 ::: STATE Chip8, RAM, RND] } Eff ()
 runOneCycle tick =
-  let chip = !(Chip8 :- get) in
   let instruction = extractOpcode !getOpcode in
   case instruction of
     Invalid _ =>
       let errorMessage = "Unknown opcode: " ++ (show instruction) in
+      let chip = !(Chip8 :- get) in
       Chip8 :- put (record { State = Halted errorMessage } chip)
     _ =>
-      ?runOneCycle
-    --       modifiedChip <- dispatch chip instruction
-    --       modifiedComputer <- pure $ updateCPUTimers (getComputer modifiedChip) tick
-    --       Chip8 :- put (record { Computer = modifiedComputer } modifiedChip)
+      do
+        dispatch instruction
+        chip <- Chip8 :- get
+        newComputer <- pure $ updateCPUTimers (Computer chip) tick
+        Chip8 :- put (record { Computer = newComputer } chip)
