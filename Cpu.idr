@@ -56,12 +56,12 @@ getRegisters {n} c len =
   -- let m = minus 16 n in
   -- let registers : Vect (n + m) Bits8 = V c in
   -- Vect.take n registers
-  ?get
+  ?get -- TODO
 
 export
 setRegisters : (cpu : Cpu) -> (len : Fin 16) -> (registers : Vect (finToNat len) Bits8) -> Cpu
 setRegisters c len registers =
-  ?set
+  ?set -- TODO
   -- let currentRegisters = V c in
   -- let tail = Vect.drop (finToNat len) currentRegisters in
   -- let newRegisters = registers ++ tail in

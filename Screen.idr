@@ -2,6 +2,8 @@ module Screen
 
 import Data.Bits
 import Data.Vect
+import Effects
+import Effect.SDL
 
 import Constants
 import Utilities
@@ -36,6 +38,35 @@ record Screen where
   constructor MkScreen
   Picture : Vect ScreenHeight (Vect ScreenWidth Pixel)
   WasErased : Bool -- track for VF
+
+data Rect = MkRect Int Int Int Int Pixel
+
+export
+renderScreen : (screen : Screen) -> { [SDL_ON] } Eff ()
+renderScreen screen =
+  let (coords, _) = foldl pixelBoundsForRow ([], 0) (Picture screen) in
+  do
+    mapE renderPixel coords
+    pure ()
+  where
+    -- calculate the pixel bounds at the current coordinates
+    pixelBounds : (accum : (List Rect, (Int, Int))) -> (pixel : Pixel) -> (List Rect, (Int, Int))
+    pixelBounds (rects, (x, y)) pixel =
+      let x1 = x * Scale in
+      let y1 = y * Scale in
+      let x2 = x1 + (Scale - 1) in
+      let y2 = y1 + (Scale - 1) in
+      let newRects = MkRect x1 y1 x2 y2 pixel :: rects in
+      MkPair newRects (x + 1, y)
+    -- build up a list of pixel bounds for this row
+    pixelBoundsForRow : (accum : (List Rect, Int)) -> Vect ScreenWidth Pixel -> (List Rect, Int)
+    pixelBoundsForRow (coords, y) row =
+      let (newCoords, _) = foldl pixelBounds ([], (MkPair 0 y)) row in
+      MkPair (coords ++ newCoords) (y + 1)
+    renderPixel : Rect -> EffM m () [SDL_ON] (\_ => [SDL_ON])
+    renderPixel (MkRect x1 y1 x2 y2 pixel) =
+      let color = case pixel of On => white; Off => black in
+      rectangle color x1 y1 x2 y2
 
 export
 Show Screen where

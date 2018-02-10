@@ -88,6 +88,7 @@ drawScreen =
     putStrLn $ show cpu
     putStrLn $ show screen
     putStrLn $ show keys
+    renderScreen screen
     flip
 
 partial
