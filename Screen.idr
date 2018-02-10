@@ -39,34 +39,27 @@ record Screen where
   Picture : Vect ScreenHeight (Vect ScreenWidth Pixel)
   WasErased : Bool -- track for VF
 
-data Rect = MkRect Int Int Int Int Pixel
+data Coord = MkCoord Int Int Pixel
 
 export
 renderScreen : (screen : Screen) -> { [SDL_ON] } Eff ()
 renderScreen screen =
-  let (coords, _) = foldl pixelBoundsForRow ([], 0) (Picture screen) in
+  let (coords, _) = foldl pixelCoordsForRow ([], 0) (Picture screen) in
   do
     mapE renderPixel coords
     pure ()
   where
-    -- calculate the pixel bounds at the current coordinates
-    pixelBounds : (accum : (List Rect, (Int, Int))) -> (pixel : Pixel) -> (List Rect, (Int, Int))
-    pixelBounds (rects, (x, y)) pixel =
-      let x1 = x * Scale in
-      let y1 = y * Scale in
-      let x2 = x1 + (Scale - 1) in
-      let y2 = y1 + (Scale - 1) in
-      let newRects = MkRect x1 y1 x2 y2 pixel :: rects in
-      MkPair newRects (x + 1, y)
-    -- build up a list of pixel bounds for this row
-    pixelBoundsForRow : (accum : (List Rect, Int)) -> Vect ScreenWidth Pixel -> (List Rect, Int)
-    pixelBoundsForRow (coords, y) row =
-      let (newCoords, _) = foldl pixelBounds ([], (MkPair 0 y)) row in
+    pixelCoords : (accum : (List Coord, (Int, Int))) -> (pixel : Pixel) -> (List Coord, (Int, Int))
+    pixelCoords (rects, (x, y)) pixel =
+      MkPair (MkCoord x y pixel :: rects) (x + 1, y)
+    pixelCoordsForRow : (accum : (List Coord, Int)) -> Vect ScreenWidth Pixel -> (List Coord, Int)
+    pixelCoordsForRow (coords, y) row =
+      let (newCoords, _) = foldl pixelCoords ([], (MkPair 0 y)) row in
       MkPair (coords ++ newCoords) (y + 1)
-    renderPixel : Rect -> EffM m () [SDL_ON] (\_ => [SDL_ON])
-    renderPixel (MkRect x1 y1 x2 y2 pixel) =
+    renderPixel : Coord -> EffM m () [SDL_ON] (\_ => [SDL_ON])
+    renderPixel (MkCoord x y pixel) =
       let color = case pixel of On => white; Off => black in
-      rectangle color x1 y1 x2 y2
+      rectangle color (x * Scale) (y * Scale) Scale Scale
 
 export
 Show Screen where

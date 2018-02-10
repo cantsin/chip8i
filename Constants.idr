@@ -24,4 +24,4 @@ RandomSeed = 1234567890
 
 export
 Scale : Int
-Scale = 4
+Scale = 5
