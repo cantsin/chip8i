@@ -85,9 +85,9 @@ drawScreen =
   let keys : Keypad = Keys c in
   do
     -- debugging
-    putStrLn $ show cpu
+    -- putStrLn $ show cpu
     -- putStrLn $ show screen
-    putStrLn $ show keys
+    -- putStrLn $ show keys
     renderScreen screen
     flip
 
