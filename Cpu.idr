@@ -52,24 +52,30 @@ export
 getPC : (cpu : Cpu) -> Bits16
 getPC = PC
 
-takeRegisters : {m : Nat} -> (n : Nat) -> (v : Vect m elem) -> Vect n elem
-takeRegisters Z v = []
-takeRegisters (S n) (x :: xs) = [x] ++ takeRegisters n xs
-
+partial
 export
 getRegisters : (cpu : Cpu) -> (len : Fin n) -> Vect n Bits8
 getRegisters {n} cpu len =
   takeRegisters n $ V cpu
+  where
+    -- similar to Vect.take except that input is not `Vect (n + m) elem`
+    partial
+    takeRegisters : (n : Nat) -> (v : Vect m elem) -> Vect n elem
+    takeRegisters Z v = []
+    takeRegisters (S n) (x :: xs) = x :: takeRegisters n xs
 
+partial
 export
-setRegisters : (cpu : Cpu) -> (len : Fin 16) -> (registers : Vect (finToNat len) Bits8) -> Cpu
-setRegisters c len registers =
-  ?set
-  -- let currentRegisters = V c in
-  -- let n = finToNat len in
-  -- let (_, rest) = splitRegisters n (minus 16 n) currentRegisters in
-  -- let newRegisters = registers ++ rest in
-  -- record { V = newRegisters } c
+setRegisters : (cpu : Cpu) -> (len : Fin 16) -> (subset : Vect (finToNat len) Bits8) -> Cpu
+setRegisters cpu len subset =
+  let n = finToNat len in
+  let (_, registers) = foldl (replaceRegisters n) (0, V cpu) subset in
+  record { V = registers } cpu
+  where
+    replaceRegisters : (limit : Nat) -> (accum : (Nat, Vect 16 elem)) -> (reg : elem) -> (Nat, Vect 16 elem)
+    replaceRegisters limit (n, accum) reg =
+      let index = restrict 15 $ cast n in
+      (n + 1, Vect.replaceAt index reg accum)
 
 export
 getRegister : (cpu : Cpu) -> (index : Fin 16) -> Bits8
