@@ -340,7 +340,8 @@ display r1 r2 s =
   let loadAddress = cast $ getRegisterI cpu in
   let sprite = !(loadBlock loadAddress s) in
   let newDisplay = writeSpriteToScreen screen sprite x y in
-  let newChip = record { Display = newDisplay, Computer = incrementPC cpu } chip in
+  let newCpu = if wasErased newDisplay then setRegister cpu 0xf 1 else setRegister cpu 0xf 0 in
+  let newChip = record { Display = newDisplay, Computer = incrementPC newCpu } chip in
   Chip8 :- put newChip
 
 skipIfKeyPressed : (chip : Chip8) -> (register : Register) -> Chip8

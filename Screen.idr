@@ -44,6 +44,10 @@ record Screen where
 data Coord = MkCoord Int Int Pixel
 
 export
+wasErased : (screen : Screen) -> Bool
+wasErased = WasErased
+
+export
 renderScreen : (screen : Screen) -> { [SDL_ON] } Eff ()
 renderScreen screen =
   let (coords, _) = foldl pixelCoordsForRow ([], 0) (Picture screen) in
@@ -119,17 +123,22 @@ writeSpriteLineToScreen screen val x y =
   where
     drawPixel : (y : Int) -> (accum : (Screen, Int)) -> (pixel : Pixel) -> (Screen, Int)
     drawPixel y (screen, x) p =
-      let newScreen = writePixelToScreen screen p x y in
+      let drawnScreen = writePixelToScreen screen p x y in
+      let wasErased = wasErased screen || wasErased drawnScreen in
+      let newScreen = record { WasErased = wasErased } drawnScreen in
       MkPair newScreen (x + 1)
 
 export
 writeSpriteToScreen : (screen : Screen) -> (sprite : Vect len Bits8) -> (x : Int) -> (y : Int) -> Screen
 writeSpriteToScreen screen sprite x y =
-  fst $ foldl (drawLine x) (MkPair screen y) sprite
+  let resetScreen = record { WasErased = False } screen in
+    fst $ foldl (drawLine x) (MkPair resetScreen y) sprite
   where
     drawLine : (x : Int) -> (accum : (Screen, Int)) -> (val : Bits8) -> (Screen, Int)
     drawLine x (screen, y) val =
-      let newScreen = writeSpriteLineToScreen screen val x y in
+      let drawnScreen = writeSpriteLineToScreen screen val x y in
+      let wasErased = wasErased screen || wasErased drawnScreen in
+      let newScreen = record { WasErased = wasErased } drawnScreen in
       MkPair newScreen (y + 1)
 
 export
