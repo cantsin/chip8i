@@ -9,8 +9,8 @@ A [Chip8](https://en.wikipedia.org/wiki/CHIP-8) emulator, written in Idris.
 
 - Uses [SDL Effects library](https://github.com/edwinb/SDL-idris) (requires `SDL` and `SDL_gfx`).
 
-    git clone https://github.com/edwinb/SDL-idris
-    idris --install sdl.ipkg
+  - git clone https://github.com/edwinb/SDL-idris
+  - idris --install sdl.ipkg
 
 - A Makefile is provided. `make run` will run this emulator with the default ROM (currently `maze.rom`). Note that ROMs are not provided in this repository.
 
