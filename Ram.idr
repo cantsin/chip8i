@@ -4,6 +4,8 @@ import Effects
 import Data.Bits
 import Data.Buffer
 
+%default total
+
 public
 export
 data Ram : Effect where

@@ -3,6 +3,8 @@ module Utilities
 import Data.Bits
 import Data.Fin
 
+%default total
+
 -- not sure why these casts are not included already. goes without
 -- saying that some conversions are potentially lossy.
 

@@ -12,6 +12,8 @@ import Ram
 import Utilities
 import Screen
 
+%default total
+
 export
 getOpcode : { [Chip8 ::: STATE Chip8, RAM] } Effects.DepEff.Eff (Bits16)
 getOpcode =

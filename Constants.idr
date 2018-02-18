@@ -1,5 +1,7 @@
 module Constants
 
+%default total
+
 export
 RamSize : Int
 RamSize = 0x1000

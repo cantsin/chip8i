@@ -12,6 +12,8 @@ import Screen
 import Keypad
 import Cpu
 
+%default total
+
 public
 export
 data Chip8State =

@@ -14,6 +14,8 @@ import Utilities
 import Ram
 import MemoryIO
 
+%default total
+
 Register : Type
 Register = Fin 16
 
@@ -189,11 +191,6 @@ clearScreen : (chip : Chip8) -> Chip8
 clearScreen chip =
   let cpu = Computer chip in
   record { Display = newScreen, Computer = incrementPC cpu } chip
-
-return : (chip : Chip8) -> Chip8
-return chip =
-  let cpu = Computer chip in
-  record { Computer = popStack cpu } chip
 
 jumpDirect : (chip : Chip8) -> (address : Address) -> Chip8
 jumpDirect chip addr =
@@ -414,6 +411,7 @@ storeBCD r =
     dumpBlock dumpAddress digits
     Chip8 :- put (record { Computer = incrementPC cpu } chip)
 
+partial
 dumpRegisters : (register : Register) -> { [Chip8 ::: STATE Chip8, RAM] } Eff ()
 dumpRegisters r =
   let chip = !(Chip8 :- get) in
@@ -426,6 +424,7 @@ dumpRegisters r =
     dumpBlock dumpAddress registers
     Chip8 :- put (record { Computer = incrementPC cpu } chip)
 
+partial
 loadRegisters : (register : Register) -> { [Chip8 ::: STATE Chip8, RAM] } Eff ()
 loadRegisters r =
   let chip = !(Chip8 :- get) in
@@ -451,9 +450,9 @@ updateChip newChip = Chip8 :- put newChip
 partial
 dispatch : (opcode : Opcode) -> { [Chip8 ::: STATE Chip8, RAM, RND] } Eff ()
 dispatch ClearScreen                = updateChip $ clearScreen                       !(Chip8 :- get)
-dispatch Return                     = updateChip $ return                            !(Chip8 :- get)
+dispatch Return                     = updateCPU  $ popStack                (Computer !(Chip8 :- get))
 dispatch (Jump addr)                = updateChip $ jumpDirect                        !(Chip8 :- get)  addr
-dispatch (Call addr)                = updateCPU  $ pushStack               (Computer !(Chip8 :- get))
+dispatch (Call addr)                = updateCPU  $ pushStack               (Computer !(Chip8 :- get)) addr
 dispatch (SkipIfEq r v)             = updateCPU  $ skipIfRegisterEqual     (Computer !(Chip8 :- get)) r  v
 dispatch (SkipIfNeq r v)            = updateCPU  $ skipIfRegisterNotEqual  (Computer !(Chip8 :- get)) r  v
 dispatch (SkipIfRegisterEq r1 r2)   = updateCPU  $ skipIfRegistersEqual    (Computer !(Chip8 :- get)) r1 r2

@@ -11,6 +11,8 @@ import Cpu
 import Keypad
 import Utilities
 
+%default total
+
 updateKeydown : (pressedKey : Fin 16) -> { [Chip8 ::: STATE Chip8] } Eff Bool
 updateKeydown pressedKey =
   do

@@ -2,6 +2,8 @@ module Keypad
 
 import Data.Vect
 
+%default total
+
 export
 record Keypad where
   constructor MkKeypad

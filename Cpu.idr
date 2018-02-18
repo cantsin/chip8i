@@ -6,6 +6,8 @@ import Data.Vect
 import Utilities
 import Constants
 
+%default total
+
 export
 record Cpu where
   constructor MkCpu
@@ -96,15 +98,15 @@ setRegisterI c v =
   record { I = v } c
 
 export
-pushStack : (cpu : Cpu) -> Cpu
-pushStack c =
+pushStack : (cpu : Cpu) -> (value : Bits16) -> Cpu
+pushStack c address =
   let index = SP c in
   case toIntegerNat $ finToNat index of
     15 => idris_crash "Cpu: tried to push to full stack"
     n =>
       let newIndex = restrict 15 (n + 1) in
       let newStack = replaceAt newIndex (PC c) (Stack c) in
-      record { SP = newIndex, Stack = newStack } c
+      record { SP = newIndex, Stack = newStack, PC = address } c
 
 export
 popStack : (cpu : Cpu) -> Cpu

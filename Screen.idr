@@ -8,6 +8,8 @@ import Effect.SDL
 import Constants
 import Utilities
 
+%default total
+
 -- a bit represents a monochrome pixel
 data Pixel = On | Off
 
